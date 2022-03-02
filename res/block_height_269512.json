@@ -1,0 +1,30 @@
+{
+  "nonce": "O3IQWXYmxLN_b0w7QyT2GTruaVIGsl-Ybhc6Pl2V20U",
+  "previous_block": "VRVYubqppWUVAeCWlzHR-38dQoWcFAKbGculkVZThfj-hNMX4QVZjqkC6-PkiNGE",
+  "timestamp": 1567052949,
+  "last_retarget": 1567052114,
+  "diff": "115792088374597902074750511579343425068641803109251942518159264612597601665024",
+  "height": 269512,
+  "hash": "____47liyh_OZdYUP4EzBoLl7JOPge9VsWPQ3b5kiU8",
+  "indep_hash": "5H-hJycMS_PnPOpobXu2CNobRlgqmw4yEMQSc5LeBfS7We63l8HjS-Ek3QaxK8ug",
+  "txs": [
+    "tqDWYT-qdoCeSWGpV2Ig48lpswOxccbBpyxf0GQjs2U",
+    "y0bIjxLaXu1gEjpRlyPUh0Uz0c5XrhIOs6z4lerXo8w"
+  ],
+  "tx_root": "",
+  "tx_tree": [],
+  "wallet_list": "6haahtRP5WVchxPbqtLCqDsFWidhebYJpU5PVB4zQhE",
+  "reward_addr": "aE1AjkBoXBfF-PRP2dzRrbYY8cY2OYzeH551nSPRU5M",
+  "tags": [],
+  "reward_pool": 0,
+  "weave_size": 21080508475,
+  "block_size": 991723,
+  "cumulative_diff": "616416144",
+  "hash_list_merkle": "1QVbbLwZHpNMJd8ZghRb13HZfrRu-aIIfzY29r64_yBJAcYv-Kfblv_c2pfKbQBP",
+  "poa": {
+    "option": "1",
+    "tx_path": "",
+    "data_path": "",
+    "chunk": ""
+  }
+}
