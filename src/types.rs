@@ -1,4 +1,5 @@
 //! arweave types
+use crate::encoding::number_or_string;
 use serde::{Deserialize, Serialize};
 
 /// Arweave Block
@@ -17,7 +18,7 @@ use serde::{Deserialize, Serialize};
 /// ## TODO
 ///
 /// Convert `String` to `Vec<u8>` for more effcient
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Block {
     // - block height < 269510
     pub nonce: String,
@@ -26,7 +27,8 @@ pub struct Block {
     pub last_retarget: u64,
     // - `u64` if block height < 269510
     // - `String` if block height >= 269510
-    pub diff: u64,
+    #[serde(deserialize_with = "number_or_string")]
+    pub diff: String,
     pub height: u64,
     pub hash: String,
     pub indep_hash: String,
@@ -39,17 +41,17 @@ pub struct Block {
     pub block_size: u64,
 
     // - 269510 <= block height < 422250
-    pub cumulative_diff: String,
-    pub hash_list_merkle: String,
+    pub cumulative_diff: Option<String>,
+    pub hash_list_merkle: Option<String>,
 
     // - block height > 422250
-    pub tx_root: String,
-    pub tx_tree: Vec<String>,
-    pub poa: Poa,
+    pub tx_root: Option<String>,
+    pub tx_tree: Option<Vec<String>>,
+    pub poa: Option<Poa>,
 }
 
 /// POA field of `Block`
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Poa {
     pub option: String,
     pub tx_path: String,
@@ -58,7 +60,7 @@ pub struct Poa {
 }
 
 /// Transaction type
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Transaction {
     pub format: usize,
     pub id: String,

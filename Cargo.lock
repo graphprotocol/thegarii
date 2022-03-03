@@ -723,12 +723,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "thegarii-firehose"
+name = "thegarii"
 version = "0.0.1"
 dependencies = [
  "base64-url",
  "reqwest",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
 ]
