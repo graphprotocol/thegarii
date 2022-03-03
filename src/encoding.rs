@@ -2,6 +2,7 @@
 use serde::de::{self, Deserialize, Deserializer};
 use serde_json::value::Value;
 
+/// parse number or string to string
 pub fn number_or_string<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: Deserializer<'de>,
