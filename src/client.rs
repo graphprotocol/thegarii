@@ -65,12 +65,39 @@ impl Client {
     }
 
     /// get arweave transaction by id
+    ///
+    /// ```rust
+    /// use thegarii::types::Transaction;
+    ///
+    /// let client = thegarii::Client::default();
+    /// let rt = tokio::runtime::Runtime::new().unwrap();
+    ///
+    /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ
+    ///   let json = include_str!("../res/tx.json");
+    ///   let tx = rt.block_on(client.get_tx_by_id("BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ")).unwrap();
+    ///   assert_eq!(tx, serde_json::from_str::<Transaction>(&json).unwrap());
+    /// }
+    /// ```
     pub async fn get_tx_by_id(&self, id: &str) -> Result<Transaction> {
         self.get(&format!("tx/{}", id)).await
     }
 
     /// get arweave transaction data by id
+    ///
+    /// ```rust
+    /// let client = thegarii::Client::default();
+    /// let rt = tokio::runtime::Runtime::new().unwrap();
+    ///
+    /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ
+    ///   let json = include_str!("../res/data.json");
+    ///   let tx = rt.block_on(client.get_tx_data_by_id("BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ")).unwrap();
+    ///   assert_eq!(tx, json);
+    /// }
+    /// ```
     pub async fn get_tx_data_by_id(&self, id: &str) -> Result<String> {
-        self.get(&format!("tx/{}/data", id)).await
+        Ok(reqwest::get(&format!("{}tx/{}/data", self.endpoint, id))
+            .await?
+            .text()
+            .await?)
     }
 }
