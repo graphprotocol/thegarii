@@ -1,4 +1,5 @@
 //! arweave types
+use serde::{Deserialize, Serialize};
 
 /// Arweave Block
 ///
@@ -16,56 +17,59 @@
 /// ## TODO
 ///
 /// Convert `String` to `Vec<u8>` for more effcient
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Block {
     // - block height < 269510
-    nonce: String,
-    previous_block: String,
-    timestamp: u64,
-    last_retarget: u64,
+    pub nonce: String,
+    pub previous_block: String,
+    pub timestamp: u64,
+    pub last_retarget: u64,
     // - `u64` if block height < 269510
     // - `String` if block height >= 269510
-    diff: u64,
-    height: u64,
-    hash: String,
-    indep_hash: String,
-    txs: Vec<String>,
-    wallet_list: String,
-    reward_addr: String,
-    tags: Vec<String>,
-    reward_pool: u64,
-    weave_size: u64,
-    block_size: u64,
+    pub diff: u64,
+    pub height: u64,
+    pub hash: String,
+    pub indep_hash: String,
+    pub txs: Vec<String>,
+    pub wallet_list: String,
+    pub reward_addr: String,
+    pub tags: Vec<String>,
+    pub reward_pool: u64,
+    pub weave_size: u64,
+    pub block_size: u64,
 
     // - 269510 <= block height < 422250
-    cumulative_diff: String,
-    hash_list_merkle: String,
+    pub cumulative_diff: String,
+    pub hash_list_merkle: String,
 
     // - block height > 422250
-    tx_root: String,
-    tx_tree: Vec<String>,
-    poa: Poa,
+    pub tx_root: String,
+    pub tx_tree: Vec<String>,
+    pub poa: Poa,
 }
 
 /// POA field of `Block`
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Poa {
-    option: String,
-    tx_path: String,
-    data_path: String,
-    chunk: String,
+    pub option: String,
+    pub tx_path: String,
+    pub data_path: String,
+    pub chunk: String,
 }
 
 /// Transaction type
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Transaction {
-    format: usize,
-    id: String,
-    last_tx: String,
-    owner: String,
-    tags: Vec<String>,
-    target: String,
-    quantity: String,
-    data_root: String,
-    data: String,
-    data_Size: String,
-    reward: String,
-    signature: String,
+    pub format: usize,
+    pub id: String,
+    pub last_tx: String,
+    pub owner: String,
+    pub tags: Vec<String>,
+    pub target: String,
+    pub quantity: String,
+    pub data_root: String,
+    pub data: String,
+    pub data_size: String,
+    pub reward: String,
+    pub signature: String,
 }
