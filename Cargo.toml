@@ -1,6 +1,6 @@
 [package]
 name = "thegarii"
-authors = ['tianyi@chainsafe.io']
+authors = ['info@chainsafe.io']
 description = 'thegarii firehose service'
 version = "0.0.1"
 license = "GPL-3.0"
