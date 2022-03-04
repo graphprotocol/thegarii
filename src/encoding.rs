@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 //! encoding utils
 use serde::de::{self, Deserialize, Deserializer};
 use serde_json::value::Value;
