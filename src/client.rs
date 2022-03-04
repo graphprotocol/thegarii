@@ -42,19 +42,19 @@ impl Client {
     /// let client = thegarii::Client::default();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
-    /// { // block height 100
+    /// { // block height 100 - https://arweave.net/block/height/100
     ///   let json = include_str!("../res/block_height_100.json");
     ///   let block = rt.block_on(client.get_block_by_height(100)).unwrap();
     ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
     /// }
     ///
-    /// { // block height 269512
+    /// { // block height 269512 - https://arweave.net/block/height/269512
     ///   let json = include_str!("../res/block_height_269512.json");
     ///   let block = rt.block_on(client.get_block_by_height(269512)).unwrap();
     ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
     /// }
     ///
-    /// { // block height 422250
+    /// { // block height 422250 - https://arweave.net/block/height/422250
     ///   let json = include_str!("../res/block_height_422250.json");
     ///   let block = rt.block_on(client.get_block_by_height(422250)).unwrap();
     ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
@@ -72,7 +72,7 @@ impl Client {
     /// let client = thegarii::Client::default();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
-    /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ
+    /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ - https://arweave.net/tx/BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ
     ///   let json = include_str!("../res/tx.json");
     ///   let tx = rt.block_on(client.get_tx_by_id("BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ")).unwrap();
     ///   assert_eq!(tx, serde_json::from_str::<Transaction>(&json).unwrap());
@@ -88,7 +88,7 @@ impl Client {
     /// let client = thegarii::Client::default();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
-    /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ
+    /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ - https://arweave.net/tx/BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ/data
     ///   let json = include_str!("../res/data.json");
     ///   let tx = rt.block_on(client.get_tx_data_by_id("BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ")).unwrap();
     ///   assert_eq!(tx, json);
