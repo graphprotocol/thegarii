@@ -67,6 +67,34 @@ impl Client {
         self.get(&format!("block/height/{}", height)).await
     }
 
+    /// ```rust
+    /// use thegarii::types::Block;
+    ///
+    /// let client = thegarii::Client::default();
+    /// let rt = tokio::runtime::Runtime::new().unwrap();
+    ///
+    /// { //  using indep_hash of block_height_100
+    ///   let json = include_str!("../res/block_height_100.json");
+    ///   let hash = "ngFDAB2KRhJgJRysuhpp1u65FjBf5WZk99_NyoMx8w6uP0IVjzb93EVkYxmcErdZ";
+    ///   let block = rt.block_on(client.get_block_by_hash(hash)).unwrap();
+    ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
+    /// }
+    /// { //  using indep_hash of block_height_269512
+    ///   let json = include_str!("../res/block_height_269512.json");
+    ///   let hash = "5H-hJycMS_PnPOpobXu2CNobRlgqmw4yEMQSc5LeBfS7We63l8HjS-Ek3QaxK8ug";
+    ///   let block = rt.block_on(client.get_block_by_hash(hash)).unwrap();
+    ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
+    /// }
+    /// { //  using indep_hash of block_height_422250
+    ///   let json = include_str!("../res/block_height_422250.json");
+    ///   let hash = "5VTARz7bwDO4GqviCSI9JXm8_JOtoQwF-QCZm0Gt2gVgwdzSY3brOtOD46bjMz09";
+    ///   let block = rt.block_on(client.get_block_by_hash(hash)).unwrap();
+    ///   assert_eq!(block, serde_json::from_str::<Block>(&json).unwrap());
+    /// }
+    pub async fn get_block_by_hash(&self, hash: &str) -> Result<Block> {
+        self.get(&format!("block/hash/{}", hash)).await
+    }
+
     /// get arweave transaction by id
     ///
     /// ```rust
