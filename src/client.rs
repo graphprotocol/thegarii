@@ -96,6 +96,11 @@ impl Client {
         self.get(&format!("block/hash/{}", hash)).await
     }
 
+    /// get latest block
+    pub async fn get_current_block(&self) -> Result<Block> {
+        self.get("current_block").await
+    }
+
     /// get arweave transaction by id
     ///
     /// ```rust
@@ -134,7 +139,22 @@ impl Client {
     }
 
     /// get and parse firehose blocks by height
-    pub async fn get_firehose_block(&self, height: u64) -> Result<FirehoseBlock> {
+    ///
+    /// ```rust
+    /// let client = thegarii::Client::default();
+    /// let rt = tokio::runtime::Runtime::new().unwrap();
+    ///
+    /// { // block height 269512 - https://arweave.net/block/height/269512
+    ///   let firehose_block = rt.block_on(client.get_firehose_block_by_height(269512)).unwrap();
+    ///
+    ///   assert_eq!(firehose_block.block, rt.block_on(client.get_block_by_height(269512)).unwrap());
+    ///   for (idx, tx) in firehose_block.block.txs.iter().enumerate() {
+    ///     // assert_eq!(firehose_block.txs[idx], rt.block_on(client.get_tx_by_id(tx)).unwrap());
+    ///     assert_eq!(firehose_block.txs_data[idx], rt.block_on(client.get_tx_data_by_id(tx)).unwrap());
+    ///   }
+    /// }
+    /// ```
+    pub async fn get_firehose_block_by_height(&self, height: u64) -> Result<FirehoseBlock> {
         let block = self.get_block_by_height(height).await?;
         let txs: Vec<Transaction> = join_all(block.txs.iter().map(|tx| self.get_tx_by_id(tx)))
             .await

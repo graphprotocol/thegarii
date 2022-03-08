@@ -39,9 +39,12 @@ pub struct Block {
     pub wallet_list: String,
     pub reward_addr: String,
     pub tags: Vec<String>,
-    pub reward_pool: u64,
-    pub weave_size: u64,
-    pub block_size: u64,
+    #[serde(deserialize_with = "number_or_string")]
+    pub reward_pool: String,
+    #[serde(deserialize_with = "number_or_string")]
+    pub weave_size: String,
+    #[serde(deserialize_with = "number_or_string")]
+    pub block_size: String,
     // - 269510 <= block height < 422250
     pub cumulative_diff: Option<String>,
     pub hash_list_merkle: Option<String>,
@@ -67,7 +70,7 @@ pub struct Transaction {
     pub id: String,
     pub last_tx: String,
     pub owner: String,
-    pub tags: Vec<String>,
+    pub tags: Vec<Tag>,
     pub target: String,
     pub quantity: String,
     pub data_root: String,
@@ -75,6 +78,13 @@ pub struct Transaction {
     pub data_size: String,
     pub reward: String,
     pub signature: String,
+}
+
+/// Transaction type
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Tag {
+    name: String,
+    value: String,
 }
 
 /// abstract firehose block which simply combines
