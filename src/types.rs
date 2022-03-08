@@ -42,11 +42,9 @@ pub struct Block {
     pub reward_pool: u64,
     pub weave_size: u64,
     pub block_size: u64,
-
     // - 269510 <= block height < 422250
     pub cumulative_diff: Option<String>,
     pub hash_list_merkle: Option<String>,
-
     // - block height > 422250
     pub tx_root: Option<String>,
     pub tx_tree: Option<Vec<String>>,
@@ -77,4 +75,13 @@ pub struct Transaction {
     pub data_size: String,
     pub reward: String,
     pub signature: String,
+}
+
+/// abstract firehose block which simply combines
+/// `Block`, `Transaction` and `TransactionData`
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FirehoseBlock {
+    pub block: Block,
+    pub txs: Vec<Transaction>,
+    pub txs_data: Vec<String>,
 }

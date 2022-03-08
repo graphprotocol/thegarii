@@ -4,8 +4,9 @@
 //! arweave client
 use crate::{
     result::Result,
-    types::{Block, Transaction},
+    types::{Block, FirehoseBlock, Transaction},
 };
+use futures::future::join_all;
 use serde::de::DeserializeOwned;
 
 /// Arweave client
@@ -130,5 +131,24 @@ impl Client {
             .await?
             .text()
             .await?)
+    }
+
+    /// get and parse firehose blocks by height
+    pub async fn get_firehose_block(&self, height: u64) -> Result<FirehoseBlock> {
+        let block = self.get_block_by_height(height).await?;
+        let txs: Vec<Transaction> = join_all(block.txs.iter().map(|tx| self.get_tx_by_id(tx)))
+            .await
+            .into_iter()
+            .collect::<Result<Vec<Transaction>>>()?;
+        let txs_data: Vec<String> = join_all(block.txs.iter().map(|tx| self.get_tx_data_by_id(tx)))
+            .await
+            .into_iter()
+            .collect::<Result<Vec<String>>>()?;
+
+        Ok(FirehoseBlock {
+            block,
+            txs,
+            txs_data,
+        })
     }
 }
