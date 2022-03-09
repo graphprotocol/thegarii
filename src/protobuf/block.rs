@@ -19,8 +19,8 @@ pub struct Block {
     #[prost(message, optional, tag = "6")]
     pub last_retarget: ::core::option::Option<::prost_types::Timestamp>,
     /// Mining difficulty; the number `hash` must be greater than.
-    #[prost(uint64, tag = "7")]
-    pub diff: u64,
+    #[prost(string, tag = "7")]
+    pub diff: ::prost::alloc::string::String,
     /// How many blocks have passed since the genesis block
     #[prost(uint32, tag = "8")]
     pub height: u32,
@@ -48,11 +48,11 @@ pub struct Block {
     #[prost(uint64, tag = "15")]
     pub reward_pool: u64,
     /// Size of the weave in bytes
-    #[prost(uint64, tag = "16")]
-    pub weave_size: u64,
+    #[prost(string, tag = "16")]
+    pub weave_size: ::prost::alloc::string::String,
     /// Size of this block in bytes
-    #[prost(uint64, tag = "17")]
-    pub block_size: u64,
+    #[prost(string, tag = "17")]
+    pub block_size: ::prost::alloc::string::String,
     /// Required after the version 1.8 fork. Zero otherwise.
     /// The sum of the average number of hashes computed
     /// by the network to produce the past blocks including this one.

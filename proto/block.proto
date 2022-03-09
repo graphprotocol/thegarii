@@ -22,7 +22,7 @@ message Block {
   google.protobuf.Timestamp last_retarget = 6;
 
   // Mining difficulty; the number `hash` must be greater than.
-  uint64 diff = 7;
+  string diff = 7;
   // How many blocks have passed since the genesis block
   uint32 height = 8;
   // Mining solution hash of the block; must satisfy the mining difficulty
@@ -42,9 +42,9 @@ message Block {
   // Size of reward pool
   uint64 reward_pool = 15;
   // Size of the weave in bytes
-  uint64 weave_size = 16;
+  string weave_size = 16;
   // Size of this block in bytes
-  uint64 block_size = 17;
+  string block_size = 17;
   // Required after the version 1.8 fork. Zero otherwise.
   // The sum of the average number of hashes computed
   // by the network to produce the past blocks including this one.
