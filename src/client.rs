@@ -38,14 +38,6 @@ impl Client {
         Ok(reqwest::get(url).await?.json().await?)
     }
 
-    /// http get request with base url as raw json str
-    pub(crate) async fn get_raw(&self, path: String) -> Result<String> {
-        let mut url = self.endpoint.to_string();
-        url.push_str(&path);
-
-        Ok(reqwest::get(url).await?.text().await?)
-    }
-
     /// get arweave block by height
     ///
     /// ```rust
