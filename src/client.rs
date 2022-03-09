@@ -38,6 +38,14 @@ impl Client {
         Ok(reqwest::get(url).await?.json().await?)
     }
 
+    /// http get request with base url as raw json str
+    pub(crate) async fn get_raw(&self, path: String) -> Result<String> {
+        let mut url = self.endpoint.to_string();
+        url.push_str(&path);
+
+        Ok(reqwest::get(url).await?.text().await?)
+    }
+
     /// get arweave block by height
     ///
     /// ```rust
@@ -166,5 +174,46 @@ impl Client {
         let mut firehose_block: FirehoseBlock = block.into();
         firehose_block.txs = txs;
         Ok(firehose_block)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use futures::future::join_all;
+
+    use crate::Client;
+    use crate::result::{Result};
+    use crate::types::{FirehoseBlock, Transaction};
+
+    #[tokio::test]
+    async fn run_with_multiple_nodes() {
+        // let clients = vec![
+        //     "51.195.254.19:1984/",
+        //     "51.195.235.206:1984/",
+        //     "51.75.206.225:1984/",
+        //     "51.178.38.52:1984/",
+        //     "178.62.222.154:1984/",
+        //     "178.170.49.5:1984/",
+        //     "90.70.52.14:1986/",
+        // ]
+        let clients = vec![
+            "https://arweave.net/",
+        ]
+            .iter().map(|endpoint| Client { endpoint }).collect::<Vec<Client>>();
+
+        let height = 269512;
+        let block = clients[0].get_block_by_height(height).await.unwrap();
+
+        let txs = join_all(block.txs.iter().enumerate().map(|(idx, tx)| {
+            let c = &clients[idx % clients.len()];
+            c.get_tx_by_id(tx)
+        }))
+            .await
+            .into_iter()
+            .collect::<Result<Vec<Transaction>>>().unwrap();
+
+
+        let mut firehose_block: FirehoseBlock = block.into();
+        firehose_block.txs = txs;
     }
 }
