@@ -10,14 +10,14 @@ pub struct Block {
     #[prost(bytes = "vec", tag = "3")]
     pub nonce: ::prost::alloc::vec::Vec<u8>,
     /// `indep_hash` of the previous block in the weave
-    ///
-    /// POSIX time of block discovery
-    ///TODO: commented out for the moment because it errors
-    ///google.protobuf.Timestamp timestamp = 5;
     #[prost(bytes = "vec", tag = "4")]
     pub previous_block: ::prost::alloc::vec::Vec<u8>,
-    // POSIX time of the last difficulty retarget
-    //google.protobuf.Timestamp last_retarget = 6;
+    /// POSIX time of block discovery
+    #[prost(message, optional, tag = "5")]
+    pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
+    /// POSIX time of the last difficulty retarget
+    #[prost(message, optional, tag = "6")]
+    pub last_retarget: ::core::option::Option<::prost_types::Timestamp>,
     /// Mining difficulty; the number `hash` must be greater than.
     #[prost(uint64, tag = "7")]
     pub diff: u64,

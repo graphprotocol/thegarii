@@ -2,6 +2,10 @@ syntax = "proto3";
 
 package block;
 
+option go_package = "github.com/streamingfast/sf-ethereum/pb/sf/ethereum/codec/v1;pbcodec";
+
+import "google/protobuf/timestamp.proto";
+
 message Block {
   // Firehose block version (unrelated to Arweave block version)
   uint32 ver = 1;
@@ -12,11 +16,10 @@ message Block {
   // `indep_hash` of the previous block in the weave
   bytes previous_block = 4;
   // POSIX time of block discovery
-  //TODO: commented out for the moment because it errors
-  //google.protobuf.Timestamp timestamp = 5;
+  google.protobuf.Timestamp timestamp = 5;
 
   // POSIX time of the last difficulty retarget
-  //google.protobuf.Timestamp last_retarget = 6;
+  google.protobuf.Timestamp last_retarget = 6;
 
   // Mining difficulty; the number `hash` must be greater than.
   uint64 diff = 7;
