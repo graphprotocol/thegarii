@@ -187,23 +187,18 @@ mod tests {
 
     #[tokio::test]
     async fn run_with_multiple_nodes() {
-        // let clients = vec![
-        //     "51.195.254.19:1984/",
-        //     "51.195.235.206:1984/",
-        //     "51.75.206.225:1984/",
-        //     "51.178.38.52:1984/",
-        //     "178.62.222.154:1984/",
-        //     "178.170.49.5:1984/",
-        //     "90.70.52.14:1986/",
-        // ]
+        // nodes fetched from https://viewblock.io/arweave/nodes
         let clients = vec![
             "https://arweave.net/",
+            "http://178.62.222.154:1984/",
+            "http://51.75.206.225:1984/",
+            "http://90.70.52.14:1984",
         ]
             .iter().map(|endpoint| Client { endpoint }).collect::<Vec<Client>>();
 
-        let height = 269512;
+        let height = 888967;
         let block = clients[0].get_block_by_height(height).await.unwrap();
-
+        // println!("{:?}", block.txs);
         let txs = join_all(block.txs.iter().enumerate().map(|(idx, tx)| {
             let c = &clients[idx % clients.len()];
             c.get_tx_by_id(tx)
@@ -211,7 +206,6 @@ mod tests {
             .await
             .into_iter()
             .collect::<Result<Vec<Transaction>>>().unwrap();
-
 
         let mut firehose_block: FirehoseBlock = block.into();
         firehose_block.txs = txs;
