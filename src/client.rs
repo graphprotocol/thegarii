@@ -173,9 +173,9 @@ impl Client {
 mod tests {
     use futures::future::join_all;
 
-    use crate::Client;
-    use crate::result::{Result};
+    use crate::result::Result;
     use crate::types::{FirehoseBlock, Transaction};
+    use crate::Client;
 
     #[tokio::test]
     async fn run_with_multiple_nodes() {
@@ -186,7 +186,9 @@ mod tests {
             "http://51.75.206.225:1984/",
             "http://90.70.52.14:1984",
         ]
-            .iter().map(|endpoint| Client { endpoint }).collect::<Vec<Client>>();
+        .iter()
+        .map(|endpoint| Client { endpoint })
+        .collect::<Vec<Client>>();
 
         let height = 888967;
         let block = clients[0].get_block_by_height(height).await.unwrap();
@@ -195,9 +197,10 @@ mod tests {
             let c = &clients[idx % clients.len()];
             c.get_tx_by_id(tx)
         }))
-            .await
-            .into_iter()
-            .collect::<Result<Vec<Transaction>>>().unwrap();
+        .await
+        .into_iter()
+        .collect::<Result<Vec<Transaction>>>()
+        .unwrap();
 
         let mut firehose_block: FirehoseBlock = block.into();
         firehose_block.txs = txs;
