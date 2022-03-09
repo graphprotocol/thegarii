@@ -4,8 +4,9 @@
 //! arweave client
 use crate::{
     result::Result,
-    types::{Block, Transaction},
+    types::{Block, FirehoseBlock, Transaction},
 };
+use futures::future::join_all;
 use serde::de::DeserializeOwned;
 
 /// Arweave client
@@ -95,6 +96,11 @@ impl Client {
         self.get(&format!("block/hash/{}", hash)).await
     }
 
+    /// get latest block
+    pub async fn get_current_block(&self) -> Result<Block> {
+        self.get("current_block").await
+    }
+
     /// get arweave transaction by id
     ///
     /// ```rust
@@ -130,5 +136,35 @@ impl Client {
             .await?
             .text()
             .await?)
+    }
+
+    /// get and parse firehose blocks by height
+    ///
+    /// ```rust
+    /// let client = thegarii::Client::default();
+    /// let rt = tokio::runtime::Runtime::new().unwrap();
+    ///
+    /// { // block height 269512 - https://arweave.net/block/height/269512
+    ///   let firehose_block = rt.block_on(client.get_firehose_block_by_height(269512)).unwrap();
+    ///
+    ///   let mut block_without_txs = firehose_block.clone();
+    ///   block_without_txs.txs = vec![];
+    ///
+    ///   assert_eq!(block_without_txs, rt.block_on(client.get_block_by_height(269512)).unwrap().into());
+    ///   for (idx, tx) in firehose_block.txs.iter().map(|tx| tx.id.clone()).enumerate() {
+    ///     assert_eq!(firehose_block.txs[idx], rt.block_on(client.get_tx_by_id(&tx)).unwrap());
+    ///   }
+    /// }
+    /// ```
+    pub async fn get_firehose_block_by_height(&self, height: u64) -> Result<FirehoseBlock> {
+        let block = self.get_block_by_height(height).await?;
+        let txs: Vec<Transaction> = join_all(block.txs.iter().map(|tx| self.get_tx_by_id(tx)))
+            .await
+            .into_iter()
+            .collect::<Result<Vec<Transaction>>>()?;
+
+        let mut firehose_block: FirehoseBlock = block.into();
+        firehose_block.txs = txs;
+        Ok(firehose_block)
     }
 }
