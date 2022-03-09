@@ -147,10 +147,12 @@ impl Client {
     /// { // block height 269512 - https://arweave.net/block/height/269512
     ///   let firehose_block = rt.block_on(client.get_firehose_block_by_height(269512)).unwrap();
     ///
-    ///   assert_eq!(firehose_block.block, rt.block_on(client.get_block_by_height(269512)).unwrap());
-    ///   for (idx, tx) in firehose_block.block.txs.iter().enumerate() {
-    ///     // assert_eq!(firehose_block.txs[idx], rt.block_on(client.get_tx_by_id(tx)).unwrap());
-    ///     assert_eq!(firehose_block.txs_data[idx], rt.block_on(client.get_tx_data_by_id(tx)).unwrap());
+    ///   let mut block_without_txs = firehose_block.clone();
+    ///   block_without_txs.txs = vec![];
+    ///
+    ///   assert_eq!(block_without_txs, rt.block_on(client.get_block_by_height(269512)).unwrap().into());
+    ///   for (idx, tx) in firehose_block.txs.iter().map(|tx| tx.id.clone()).enumerate() {
+    ///     assert_eq!(firehose_block.txs[idx], rt.block_on(client.get_tx_by_id(&tx)).unwrap());
     ///   }
     /// }
     /// ```
@@ -160,15 +162,9 @@ impl Client {
             .await
             .into_iter()
             .collect::<Result<Vec<Transaction>>>()?;
-        let txs_data: Vec<String> = join_all(block.txs.iter().map(|tx| self.get_tx_data_by_id(tx)))
-            .await
-            .into_iter()
-            .collect::<Result<Vec<String>>>()?;
 
-        Ok(FirehoseBlock {
-            block,
-            txs,
-            txs_data,
-        })
+        let mut firehose_block: FirehoseBlock = block.into();
+        firehose_block.txs = txs;
+        Ok(firehose_block)
     }
 }
