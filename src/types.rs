@@ -54,33 +54,6 @@ pub struct Block {
     pub poa: Option<Poa>,
 }
 
-impl Into<FirehoseBlock> for Block {
-    fn into(self) -> FirehoseBlock {
-        FirehoseBlock {
-            ver: 1,
-            indep_hash: self.indep_hash,
-            nonce: self.nonce,
-            previous_block: self.previous_block,
-            timestamp: self.timestamp,
-            last_retarget: self.last_retarget,
-            diff: self.diff,
-            height: self.height,
-            hash: self.hash,
-            tx_root: self.tx_root,
-            txs: vec![],
-            wallet_list: self.wallet_list,
-            reward_addr: self.reward_addr,
-            tags: self.tags,
-            reward_pool: self.reward_pool,
-            weave_size: self.weave_size,
-            block_size: self.block_size,
-            cumulative_diff: self.cumulative_diff,
-            hash_list_merkle: self.hash_list_merkle,
-            poa: self.poa,
-        }
-    }
-}
-
 /// POA field of `Block`
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Poa {
@@ -166,4 +139,31 @@ pub struct FirehoseBlock {
     pub hash_list_merkle: Option<String>,
     // The proof of access, Used after v2.4 only, set as defaults otherwise
     pub poa: Option<Poa>,
+}
+
+impl From<Block> for FirehoseBlock {
+    fn from(block: Block) -> Self {
+        FirehoseBlock {
+            ver: 1,
+            indep_hash: block.indep_hash,
+            nonce: block.nonce,
+            previous_block: block.previous_block,
+            timestamp: block.timestamp,
+            last_retarget: block.last_retarget,
+            diff: block.diff,
+            height: block.height,
+            hash: block.hash,
+            tx_root: block.tx_root,
+            txs: vec![],
+            wallet_list: block.wallet_list,
+            reward_addr: block.reward_addr,
+            tags: block.tags,
+            reward_pool: block.reward_pool,
+            weave_size: block.weave_size,
+            block_size: block.block_size,
+            cumulative_diff: block.cumulative_diff,
+            hash_list_merkle: block.hash_list_merkle,
+            poa: block.poa,
+        }
+    }
 }
