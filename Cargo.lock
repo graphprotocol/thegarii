@@ -908,8 +908,13 @@ name = "thegarii"
 version = "0.0.1"
 dependencies = [
  "base64-url",
+<<<<<<< HEAD
  "futures",
  "prost",
+=======
+ "prost",
+ "futures",
+>>>>>>> f1388032e2762776a706c8870ff034aa501571cd
  "reqwest",
  "serde",
  "serde_json",
