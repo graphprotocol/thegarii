@@ -6,12 +6,12 @@
 //! this library fetches blocks from Arweave and generates firehose blocks for the Graph
 pub mod client;
 mod encoding;
+mod extractor;
 pub mod result;
 pub mod types;
-mod extractor;
 
-pub use extractor::Extractor;
 pub use self::{
     client::Client,
     result::{Error, Result},
 };
+pub use extractor::Extractor;
