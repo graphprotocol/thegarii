@@ -17,6 +17,9 @@ pub struct Client {
     endpoint: &'static str,
 }
 
+unsafe impl Send for Client {}
+unsafe impl Sync for Client {}
+
 impl Default for Client {
     fn default() -> Self {
         Self {

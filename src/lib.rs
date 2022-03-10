@@ -8,7 +8,9 @@ pub mod client;
 mod encoding;
 pub mod result;
 pub mod types;
+mod extractor;
 
+pub use extractor::Extractor;
 pub use self::{
     client::Client,
     result::{Error, Result},
