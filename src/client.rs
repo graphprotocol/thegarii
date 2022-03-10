@@ -169,8 +169,3 @@ impl Client {
         Ok(firehose_block)
     }
 }
-
-// /// fetch arweave blocks
-// pub async fn fetch() -> Result<()> {
-//
-// }
