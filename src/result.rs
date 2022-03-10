@@ -14,6 +14,8 @@ pub enum Error {
     BlockNotFound(u64),
     #[error(transparent)]
     Io(#[from] io::Error),
+    #[error("no block exists")]
+    NoBlockExists,
     #[error("could not find data directory on this machine")]
     NoDataDirectory,
     #[error(transparent)]
