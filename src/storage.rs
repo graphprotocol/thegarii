@@ -1,5 +1,6 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
+
 #![allow(unused)]
 use crate::{env, types::FirehoseBlock, Error, Result};
 use rocksdb::{IteratorMode, DB};
