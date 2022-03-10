@@ -86,7 +86,7 @@ impl Storage {
         )?))
     }
 
-    // batch write blocks into db
+    /// batch write blocks into db
     pub fn write(&self, blocks: Vec<FirehoseBlock>) -> Result<()> {
         let mut batch = WriteBatch::default();
         for b in blocks {
@@ -94,6 +94,13 @@ impl Storage {
         }
 
         self.0.write(batch)?;
+        Ok(())
+    }
+
+    /// flush data to disk
+    pub fn flush(&self) -> Result<()> {
+        self.0.flush()?;
+
         Ok(())
     }
 }
