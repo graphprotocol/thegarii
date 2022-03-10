@@ -3,7 +3,7 @@
 
 #![allow(unused)]
 use crate::{env, types::FirehoseBlock, Error, Result};
-use rocksdb::{IteratorMode, DB};
+use rocksdb::{IteratorMode, WriteBatch, DB};
 
 /// firehose block storage
 pub struct Storage(DB);
@@ -71,10 +71,9 @@ impl Storage {
 
     /// set block
     pub fn put(&self, block: FirehoseBlock) -> Result<()> {
-        let height = block.height;
-        let bytes = bincode::serialize(&block)?;
+        self.0
+            .put(block.height.to_le_bytes(), &bincode::serialize(&block)?)?;
 
-        self.0.put(height.to_le_bytes(), &bytes)?;
         Ok(())
     }
 
@@ -85,5 +84,16 @@ impl Storage {
             env::db_path()?,
             false,
         )?))
+    }
+
+    // batch write blocks into db
+    pub fn write(&self, blocks: Vec<FirehoseBlock>) -> Result<()> {
+        let mut batch = WriteBatch::default();
+        for b in blocks {
+            batch.put(b.height.to_le_bytes(), bincode::serialize(&b)?);
+        }
+
+        self.0.write(batch)?;
+        Ok(())
     }
 }
