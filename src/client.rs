@@ -26,6 +26,7 @@ impl Default for Client {
 }
 
 impl Client {
+    /// new arweave client
     pub fn new(endpoint: &'static str) -> Self {
         Self { endpoint }
     }
@@ -168,3 +169,8 @@ impl Client {
         Ok(firehose_block)
     }
 }
+
+// /// fetch arweave blocks
+// pub async fn fetch() -> Result<()> {
+//
+// }
