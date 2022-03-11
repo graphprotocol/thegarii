@@ -43,7 +43,7 @@ impl Extractor {
         let block = client.get_block_by_height(height).await?;
 
         log::debug!(
-            "pulled block at height: {:?}, # txns is {:}",
+            "pull block at height: {:?}, # of txns is {:}",
             height,
             block.txs.len()
         );
