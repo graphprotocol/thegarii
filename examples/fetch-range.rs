@@ -20,6 +20,11 @@ async fn main() {
     ];
     let mut extractor = Extractor::new(nodes);
 
+    // Note: if the blocks are really old, the nodes might not have
+    // those blocks, it would throw error. In this case, we need to
+    // handle those cases. But for now, testing, we can just use
+    // more recent nodes.
+
     let start_block = 890825u64;
     let end_block = 890830u64;
     match extractor.pull(start_block, end_block).await {
