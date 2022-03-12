@@ -28,6 +28,22 @@ impl Extractor {
         }
     }
 
+    /// Start pulling from the clients of the most recent node
+    pub async fn pull_latest(&mut self) -> Result<()> {
+        let client = self.select_random_client();
+        let block = client.get_current_block().await?;
+
+        log::info!(
+            "pull block at height: {:?}, # of txns is {:}",
+            block.height,
+            block.txs.len()
+        );
+        self.pull_txs(block.txs).await?;
+        log::info!("finished pulling block {:?}", block.height);
+
+        Ok(())
+    }
+
     /// Start pulling from the clients from the start to the
     /// end blocks, exclusive of the end block
     pub async fn pull(&mut self, start: u64, end: u64) -> Result<()> {
@@ -42,17 +58,23 @@ impl Extractor {
         let client = self.select_random_client();
         let block = client.get_block_by_height(height).await?;
 
-        log::debug!(
+        log::info!(
             "pull block at height: {:?}, # of txns is {:}",
             height,
             block.txs.len()
         );
+        self.pull_txs(block.txs).await?;
+        log::info!("finished pulling block {:?}", height);
 
+        Ok(())
+    }
+
+    async fn pull_txs(&mut self, txns: Vec<String>) -> Result<()> {
         // This is just a simple count down latch implementation using mutex.
         // There should be better solutions in actual prod implementation.
         // For testing, this should be enough.
-        let simple_countdown = Arc::new(Mutex::new(block.txs.len()));
-        for t in block.txs {
+        let simple_countdown = Arc::new(Mutex::new(txns.len()));
+        for t in txns {
             let c = Arc::clone(&self.clients[self.next_node]);
             let l = Arc::clone(&simple_countdown);
 
@@ -63,7 +85,11 @@ impl Extractor {
                 match c.get_tx_by_id(&t).await {
                     Ok(tx) => {
                         // we should store to rocks db
-                        log::debug!("fetched transaction: {:?}", tx.id);
+                        log::debug!(
+                            "fetched transaction: {:?} with last: {:?}",
+                            tx.id,
+                            tx.last_tx
+                        );
                     }
                     Err(e) => {
                         log::error!("todo, handle this error: {:?}", e);
@@ -83,8 +109,6 @@ impl Extractor {
             }
             thread::sleep(Duration::from_millis(1000));
         }
-
-        log::info!("finished pulling block {:?}", height);
 
         Ok(())
     }
