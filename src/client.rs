@@ -6,38 +6,26 @@ use crate::{
     result::{Error, Result},
     types::{Block, FirehoseBlock, Transaction},
 };
-use core::sync::atomic::{AtomicUsize, Ordering};
 use futures::future::join_all;
+use rand::Rng;
 use serde::de::DeserializeOwned;
 
 /// Arweave client
 pub struct Client {
     endpoints: Vec<&'static str>,
-    ptr: AtomicUsize,
 }
 
 impl Default for Client {
     fn default() -> Self {
         Self {
             endpoints: vec!["https://arweave.net/"],
-            ptr: AtomicUsize::new(0),
         }
     }
 }
 
 impl Client {
     fn next_endpoint(&self) -> String {
-        let len = self.endpoints.len();
-        let ptr = self.ptr.load(Ordering::SeqCst);
-        let next = self.endpoints[ptr].to_string();
-
-        if ptr + 1 < len {
-            self.ptr.fetch_add(1, Ordering::SeqCst);
-        } else {
-            self.ptr.store(0, Ordering::SeqCst);
-        }
-
-        next
+        self.endpoints[rand::thread_rng().gen_range(0..self.endpoints.len())].to_string()
     }
 
     pub fn new(endpoints: Vec<&'static str>) -> Result<Self> {
@@ -45,10 +33,7 @@ impl Client {
             return Err(Error::EmptyEndpoints);
         }
 
-        Ok(Self {
-            endpoints,
-            ptr: AtomicUsize::new(0),
-        })
+        Ok(Self { endpoints })
     }
 
     /// http get request with base url
