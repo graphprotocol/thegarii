@@ -26,6 +26,7 @@ impl Default for Client {
 }
 
 impl Client {
+    /// new arweave client
     pub fn new(endpoint: &'static str) -> Self {
         Self { endpoint }
     }
