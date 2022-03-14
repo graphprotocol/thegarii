@@ -7,10 +7,10 @@
 use crate::result::Result;
 use crate::Client;
 use rand::Rng;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use tokio::sync::Mutex;
 
 /// The Extractor struct that handles the pulling of different nodes
 pub struct Extractor {
@@ -21,7 +21,7 @@ pub struct Extractor {
 }
 
 impl Extractor {
-    pub fn new(nodes: Vec<&'static str>) -> Self {
+    pub fn new(nodes: &Vec<&'static str>) -> Self {
         Self {
             clients: nodes.iter().map(|n| Arc::new(Client::new(n))).collect(),
             next_node: 0,
@@ -73,7 +73,7 @@ impl Extractor {
         // This is just a simple count down latch implementation using mutex.
         // There should be better solutions in actual prod implementation.
         // For testing, this should be enough.
-        let simple_countdown = Arc::new(Mutex::new(txns.len()));
+        let simple_countdown = Arc::new(AtomicUsize::new(txns.len()));
         for t in txns {
             let c = Arc::clone(&self.clients[self.next_node]);
             let l = Arc::clone(&simple_countdown);
@@ -95,14 +95,12 @@ impl Extractor {
                         log::error!("todo, handle this error: {:?}", e);
                     }
                 }
-                let l_ref = &(&*l);
-                let mut r = l_ref.lock().await;
-                *r -= 1;
+                l.fetch_sub(1, Ordering::SeqCst);
             });
         }
 
         loop {
-            let countdown = simple_countdown.lock().await;
+            let countdown = simple_countdown.load(Ordering::SeqCst);
             log::debug!("countdown: {:?}", countdown);
             if countdown.eq(&0) {
                 break;
