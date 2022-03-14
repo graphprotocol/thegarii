@@ -3,9 +3,10 @@
 
 //! arweave client
 use crate::{
-    result::Result,
+    result::{Error, Result},
     types::{Block, FirehoseBlock, Transaction},
 };
+use core::sync::atomic::{AtomicUsize, Ordering};
 use futures::future::join_all;
 use serde::de::DeserializeOwned;
 
@@ -14,25 +15,48 @@ pub struct Client {
     // TODO
     //
     // use `endpoints` when supporting multiple endpoints
-    endpoint: &'static str,
+    endpoints: Vec<&'static str>,
+    ptr: AtomicUsize,
 }
 
 impl Default for Client {
     fn default() -> Self {
         Self {
-            endpoint: "https://arweave.net/",
+            endpoints: vec!["https://arweave.net/"],
+            ptr: AtomicUsize::new(0),
         }
     }
 }
 
 impl Client {
-    pub fn new(endpoint: &'static str) -> Self {
-        Self { endpoint }
+    fn next_endpoint(&self) -> String {
+        let len = self.endpoints.len();
+        let ptr = self.ptr.load(Ordering::SeqCst);
+        let next = self.endpoints[ptr].to_string();
+
+        if ptr + 1 < len {
+            self.ptr.fetch_add(1, Ordering::SeqCst);
+        } else {
+            self.ptr.store(0, Ordering::SeqCst);
+        }
+
+        return next;
+    }
+
+    pub fn new(endpoints: Vec<&'static str>) -> Result<Self> {
+        if endpoints.is_empty() {
+            return Err(Error::EmptyEndpoints);
+        }
+
+        Ok(Self {
+            endpoints,
+            ptr: AtomicUsize::new(0),
+        })
     }
 
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
-        let mut url = self.endpoint.to_string();
+        let mut url = self.next_endpoint();
         url.push_str(path);
 
         Ok(reqwest::get(url).await?.json().await?)
@@ -132,10 +156,12 @@ impl Client {
     /// }
     /// ```
     pub async fn get_tx_data_by_id(&self, id: &str) -> Result<String> {
-        Ok(reqwest::get(&format!("{}tx/{}/data", self.endpoint, id))
-            .await?
-            .text()
-            .await?)
+        Ok(
+            reqwest::get(&format!("{}tx/{}/data", self.next_endpoint(), id))
+                .await?
+                .text()
+                .await?,
+        )
     }
 
     /// get and parse firehose blocks by height

@@ -6,6 +6,8 @@
 /// the graii errors
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("no endpoints provided")]
+    EmptyEndpoints,
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
 }
