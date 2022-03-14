@@ -12,9 +12,6 @@ use serde::de::DeserializeOwned;
 
 /// Arweave client
 pub struct Client {
-    // TODO
-    //
-    // use `endpoints` when supporting multiple endpoints
     endpoints: Vec<&'static str>,
     ptr: AtomicUsize,
 }
