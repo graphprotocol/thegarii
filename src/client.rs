@@ -37,7 +37,7 @@ impl Client {
             self.ptr.store(0, Ordering::SeqCst);
         }
 
-        return next;
+        next
     }
 
     pub fn new(endpoints: Vec<&'static str>) -> Result<Self> {
