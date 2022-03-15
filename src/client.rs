@@ -12,13 +12,13 @@ use serde::de::DeserializeOwned;
 
 /// Arweave client
 pub struct Client {
-    endpoints: Vec<&'static str>,
+    endpoints: Vec<String>,
 }
 
 impl Default for Client {
     fn default() -> Self {
         Self {
-            endpoints: vec!["https://arweave.net/"],
+            endpoints: vec!["https://arweave.net/".to_string()],
         }
     }
 }
@@ -30,7 +30,7 @@ impl Client {
     }
 
     /// new arweave client
-    pub fn new(endpoints: Vec<&'static str>) -> Result<Self> {
+    pub fn new(endpoints: Vec<String>) -> Result<Self> {
         if endpoints.is_empty() {
             return Err(Error::EmptyEndpoints);
         }

@@ -4,14 +4,15 @@
 #![allow(unused)]
 use crate::{env, types::FirehoseBlock, Error, Result};
 use rocksdb::{IteratorMode, WriteBatch, DB};
+use std::path::{Path, PathBuf};
 
 /// firehose block storage
 pub struct Storage(DB);
 
 impl Storage {
     /// new storage
-    pub fn new() -> Result<Self> {
-        Ok(Self(DB::open_default(env::db_path()?)?))
+    pub fn new(db_path: &dyn AsRef<Path>) -> Result<Self> {
+        Ok(Self(DB::open_default(db_path)?))
     }
 
     /// check block continuous
@@ -78,10 +79,10 @@ impl Storage {
     }
 
     /// new read-only storage
-    pub fn read_only() -> Result<Self> {
+    pub fn read_only(db_path: &dyn AsRef<Path>) -> Result<Self> {
         Ok(Self(DB::open_for_read_only(
             &Default::default(),
-            env::db_path()?,
+            db_path,
             false,
         )?))
     }
