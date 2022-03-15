@@ -4,22 +4,23 @@
 
 use crate::{service::Service, Client, Env, Result, Storage};
 use async_trait::async_trait;
-use std::time::Duration;
+use futures::lock::Mutex;
+use std::{sync::Arc, time::Duration};
 
 /// checking service
 pub struct Checking {
     client: Client,
-    storage: Storage,
+    storage: Arc<Mutex<Storage>>,
     interval: u64,
 }
 
 impl Checking {
     /// check missed blocks and re-poll
     pub async fn check(&self) -> Result<()> {
-        let missed = self.storage.continuous()?;
+        let storage = self.storage.lock().await;
+        let missed = storage.continuous()?;
         if !missed.is_empty() {
-            self.storage
-                .write(self.client.poll(missed.into_iter()).await?)?;
+            storage.write(self.client.poll(missed.into_iter()).await?)?;
         }
 
         Ok(())
@@ -39,13 +40,12 @@ impl Service for Checking {
     const NAME: &'static str = "checking";
 
     /// new checking service
-    async fn new(env: &Env) -> Result<Self> {
+    async fn new(env: &Env, storage: Arc<Mutex<Storage>>) -> Result<Self> {
         let client = Client::new(
             env.endpoints.clone(),
             Duration::from_millis(env.polling_timeout),
             env.polling_retry_times,
         )?;
-        let storage = Storage::new(&env.db_path)?;
 
         Ok(Self {
             client,

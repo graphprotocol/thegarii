@@ -1,10 +1,10 @@
 //! start service
 use crate::{
     service::{Checking, Polling, Service},
-    Env, Result,
+    Env, Result, Storage,
 };
-use futures::{future::join_all, join};
-use std::path::PathBuf;
+use futures::{future::join_all, join, lock::Mutex};
+use std::{path::PathBuf, sync::Arc};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -21,7 +21,11 @@ impl Start {
             env.with_db_path(db_path.into());
         }
 
-        let (polling, checking) = join!(Polling::new(&env), Checking::new(&env));
+        let storage = Arc::new(Mutex::new(Storage::new(&env.db_path)?));
+        let (polling, checking) = join!(
+            Polling::new(&env, storage.clone()),
+            Checking::new(&env, storage.clone())
+        );
 
         join_all(vec![polling?.start(), checking?.start()])
             .await
