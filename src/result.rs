@@ -8,6 +8,8 @@ use std::{env::VarError, io};
 /// the graii errors
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("no endpoints provided")]
+    EmptyEndpoints,
     #[error(transparent)]
     Bincode(#[from] bincode::Error),
     #[error("block {0} not found")]

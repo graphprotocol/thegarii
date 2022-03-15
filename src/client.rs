@@ -3,37 +3,44 @@
 
 //! arweave client
 use crate::{
-    result::Result,
+    result::{Error, Result},
     types::{Block, FirehoseBlock, Transaction},
 };
 use futures::future::join_all;
+use rand::Rng;
 use serde::de::DeserializeOwned;
 
 /// Arweave client
 pub struct Client {
-    // TODO
-    //
-    // use `endpoints` when supporting multiple endpoints
-    endpoint: &'static str,
+    endpoints: Vec<&'static str>,
 }
 
 impl Default for Client {
     fn default() -> Self {
         Self {
-            endpoint: "https://arweave.net/",
+            endpoints: vec!["https://arweave.net/"],
         }
     }
 }
 
 impl Client {
+    /// get next endpoint
+    fn next_endpoint(&self) -> String {
+        self.endpoints[rand::thread_rng().gen_range(0..self.endpoints.len())].to_string()
+    }
+
     /// new arweave client
-    pub fn new(endpoint: &'static str) -> Self {
-        Self { endpoint }
+    pub fn new(endpoints: Vec<&'static str>) -> Result<Self> {
+        if endpoints.is_empty() {
+            return Err(Error::EmptyEndpoints);
+        }
+
+        Ok(Self { endpoints })
     }
 
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
-        let mut url = self.endpoint.to_string();
+        let mut url = self.next_endpoint();
         url.push_str(path);
 
         Ok(reqwest::get(url).await?.json().await?)
@@ -133,10 +140,12 @@ impl Client {
     /// }
     /// ```
     pub async fn get_tx_data_by_id(&self, id: &str) -> Result<String> {
-        Ok(reqwest::get(&format!("{}tx/{}/data", self.endpoint, id))
-            .await?
-            .text()
-            .await?)
+        Ok(
+            reqwest::get(&format!("{}tx/{}/data", self.next_endpoint(), id))
+                .await?
+                .text()
+                .await?,
+        )
     }
 
     /// get and parse firehose blocks by height
