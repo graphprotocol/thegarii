@@ -24,10 +24,12 @@ impl Default for Client {
 }
 
 impl Client {
+    /// get next endpoint
     fn next_endpoint(&self) -> String {
         self.endpoints[rand::thread_rng().gen_range(0..self.endpoints.len())].to_string()
     }
 
+    /// new arweave client
     pub fn new(endpoints: Vec<&'static str>) -> Result<Self> {
         if endpoints.is_empty() {
             return Err(Error::EmptyEndpoints);
