@@ -36,7 +36,7 @@ impl Checking {
 
 #[async_trait]
 impl Service for Checking {
-    const NAME: &'static str = "polling";
+    const NAME: &'static str = "checking";
 
     /// new checking service
     async fn new(env: &Env) -> Result<Self> {
