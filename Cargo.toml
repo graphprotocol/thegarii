@@ -9,6 +9,7 @@ repository = 'https://github.com/ChainSafe/the-garii'
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1.52"
 base64-url = "1.4.10"
 bincode = "1.3.3"
 dirs = "4.0.0"
