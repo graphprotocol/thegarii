@@ -46,7 +46,11 @@ impl Service for Polling {
             env.polling_retry_times,
         )?;
         let storage = Storage::new(&env.db_path)?;
-        let ptr = storage.last()?.height;
+        let ptr = if let Ok(last) = storage.last() {
+            last.height
+        } else {
+            0
+        };
         let current = client.get_current_block().await?.height;
 
         Ok(Self {

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{Env, Result};
 use async_trait::async_trait;
-use futures::{future::join_all, join};
 
 mod checking;
 mod polling;
@@ -22,17 +21,12 @@ pub trait Service: Sized {
     /// start service
     async fn start(&mut self) -> Result<()> {
         log::info!("start {} service...", Self::NAME);
-        self.run().await?;
+
+        if let Err(e) = self.run().await {
+            log::error!("{} service is down {}, restarting...", Self::NAME, e);
+            self.start().await?;
+        }
+
         Ok(())
     }
-}
-
-/// start services
-pub async fn start() -> Result<()> {
-    let env = Env::new()?;
-
-    let (polling, checking) = join!(Polling::new(&env), Checking::new(&env));
-    join_all(vec![polling?.start(), checking?.start()]).await;
-
-    Ok(())
 }
