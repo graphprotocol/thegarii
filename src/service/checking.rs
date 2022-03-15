@@ -18,7 +18,15 @@ impl Checking {
     /// check missed blocks and re-poll
     pub async fn check(&self) -> Result<()> {
         let storage = self.storage.lock().await;
+        let count = storage.count()?;
         let missed = storage.continuous()?;
+
+        log::info!(
+            "checking blocks {}/{}, missed: {}.",
+            count - missed.len() as u64,
+            count,
+            missed.len()
+        );
         if !missed.is_empty() {
             storage.write(self.client.poll(missed.into_iter()).await?)?;
         }

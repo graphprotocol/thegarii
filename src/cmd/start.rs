@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 //! start service
 use crate::{
     service::{Checking, Polling, Service},

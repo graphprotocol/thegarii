@@ -25,11 +25,11 @@ impl Polling {
         loop {
             let end = (self.ptr + self.batch as u64).min((self.current - self.safe).max(0));
 
-            {
-                let storage = self.storage.lock().await;
-                storage.write(self.client.poll(self.ptr..end).await?)?;
-                drop(storage);
-            }
+            log::info!("fetching blocks {}..{}/{}...", self.ptr, end, self.current);
+            self.storage
+                .lock()
+                .await
+                .write(self.client.poll(self.ptr..end).await?)?;
 
             self.ptr = end;
             if end > self.current {
