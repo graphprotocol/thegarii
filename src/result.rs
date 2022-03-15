@@ -3,7 +3,7 @@
 
 //! the graii results
 
-use std::{env::VarError, io};
+use std::{env::VarError, io, num::ParseIntError};
 
 /// the graii errors
 #[derive(thiserror::Error, Debug)]
@@ -20,6 +20,8 @@ pub enum Error {
     NoBlockExists,
     #[error("could not find data directory on this machine")]
     NoDataDirectory,
+    #[error(transparent)]
+    ParseInt(#[from] ParseIntError),
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]

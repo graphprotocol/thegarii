@@ -8,19 +8,15 @@ use crate::{
 };
 use futures::future::join_all;
 use rand::Rng;
+use reqwest::{Client as ReqwestClient, ClientBuilder};
 use serde::de::DeserializeOwned;
+use std::time::Duration;
 
 /// Arweave client
 pub struct Client {
+    client: ReqwestClient,
     endpoints: Vec<String>,
-}
-
-impl Default for Client {
-    fn default() -> Self {
-        Self {
-            endpoints: vec!["https://arweave.net/".to_string()],
-        }
-    }
+    retry: u8,
 }
 
 impl Client {
@@ -30,12 +26,18 @@ impl Client {
     }
 
     /// new arweave client
-    pub fn new(endpoints: Vec<String>) -> Result<Self> {
+    pub fn new(endpoints: Vec<String>, timeout: Duration, retry: u8) -> Result<Self> {
         if endpoints.is_empty() {
             return Err(Error::EmptyEndpoints);
         }
 
-        Ok(Self { endpoints })
+        let client = ClientBuilder::new().gzip(true).timeout(timeout).build()?;
+
+        Ok(Self {
+            client,
+            endpoints,
+            retry,
+        })
     }
 
     /// http get request with base url
@@ -43,7 +45,20 @@ impl Client {
         let mut url = self.next_endpoint();
         url.push_str(path);
 
-        Ok(reqwest::get(url).await?.json().await?)
+        let mut retried = 0;
+        loop {
+            match self.client.get(&url).send().await?.json().await {
+                Ok(r) => return Ok(r),
+                Err(e) => {
+                    if retried < self.retry {
+                        retried += 1;
+                        continue;
+                    }
+
+                    return Err(e.into());
+                }
+            }
+        }
     }
 
     /// get arweave block by height
@@ -139,13 +154,19 @@ impl Client {
     ///   assert_eq!(tx, json);
     /// }
     /// ```
+    ///
+    /// # NOTE
+    ///
+    /// timeout and retry don't work for this reqeust since we're not using
+    /// this api in the polling service.
     pub async fn get_tx_data_by_id(&self, id: &str) -> Result<String> {
-        Ok(
-            reqwest::get(&format!("{}tx/{}/data", self.next_endpoint(), id))
-                .await?
-                .text()
-                .await?,
-        )
+        Ok(self
+            .client
+            .get(&format!("{}tx/{}/data", self.next_endpoint(), id))
+            .send()
+            .await?
+            .text()
+            .await?)
     }
 
     /// get and parse firehose blocks by height
