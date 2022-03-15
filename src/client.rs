@@ -5,6 +5,7 @@
 use crate::{
     result::{Error, Result},
     types::{Block, FirehoseBlock, Transaction},
+    Env,
 };
 use futures::future::join_all;
 use rand::Rng;
@@ -40,14 +41,33 @@ impl Client {
         })
     }
 
+    /// new client from environments
+    pub fn from_env() -> Result<Self> {
+        let env = Env::new()?;
+        let client = ClientBuilder::new()
+            .gzip(true)
+            .timeout(Duration::from_millis(env.polling_timeout))
+            .build()?;
+
+        Ok(Self {
+            client,
+            endpoints: env.endpoints,
+            retry: env.polling_retry_times,
+        })
+    }
+
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
-        let mut url = self.next_endpoint();
-        url.push_str(path);
-
         let mut retried = 0;
         loop {
-            match self.client.get(&url).send().await?.json().await {
+            match self
+                .client
+                .get(&format!("{}/{}", self.next_endpoint(), path))
+                .send()
+                .await?
+                .json()
+                .await
+            {
                 Ok(r) => return Ok(r),
                 Err(e) => {
                     if retried < self.retry {
@@ -66,7 +86,7 @@ impl Client {
     /// ```rust
     /// use thegarii::types::Block;
     ///
-    /// let client = thegarii::Client::default();
+    /// let client = thegarii::Client::from_env().unwrap();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
     /// { // block height 100 - https://arweave.net/block/height/100
@@ -94,7 +114,7 @@ impl Client {
     /// ```rust
     /// use thegarii::types::Block;
     ///
-    /// let client = thegarii::Client::default();
+    /// let client = thegarii::Client::from_env().unwrap();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
     /// { //  using indep_hash of block_height_100
@@ -129,7 +149,7 @@ impl Client {
     /// ```rust
     /// use thegarii::types::Transaction;
     ///
-    /// let client = thegarii::Client::default();
+    /// let client = thegarii::Client::from_env().unwrap();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
     /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ - https://arweave.net/tx/BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ
@@ -145,7 +165,7 @@ impl Client {
     /// get arweave transaction data by id
     ///
     /// ```rust
-    /// let client = thegarii::Client::default();
+    /// let client = thegarii::Client::from_env().unwrap();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
     /// { // tx BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ - https://arweave.net/tx/BNttzDav3jHVnNiV7nYbQv-GY0HQ-4XXsdkE5K9ylHQ/data
@@ -162,7 +182,7 @@ impl Client {
     pub async fn get_tx_data_by_id(&self, id: &str) -> Result<String> {
         Ok(self
             .client
-            .get(&format!("{}tx/{}/data", self.next_endpoint(), id))
+            .get(&format!("{}/tx/{}/data", self.next_endpoint(), id))
             .send()
             .await?
             .text()
@@ -172,7 +192,7 @@ impl Client {
     /// get and parse firehose blocks by height
     ///
     /// ```rust
-    /// let client = thegarii::Client::default();
+    /// let client = thegarii::Client::from_env().unwrap();
     /// let rt = tokio::runtime::Runtime::new().unwrap();
     ///
     /// { // block height 269512 - https://arweave.net/block/height/269512
@@ -197,5 +217,23 @@ impl Client {
         let mut firehose_block: FirehoseBlock = block.into();
         firehose_block.txs = txs;
         Ok(firehose_block)
+    }
+
+    /// poll blocks from iterator
+    ///
+    /// ```rust
+    /// let client = thegarii::Client::from_env().unwrap();
+    /// let rt = tokio::runtime::Runtime::new().unwrap();
+    ///
+    /// rt.block_on(client.poll(269512..269515)).unwrap();
+    /// ```
+    pub async fn poll<Blocks>(&self, blocks: Blocks) -> Result<Vec<FirehoseBlock>>
+    where
+        Blocks: Iterator<Item = u64> + Sized,
+    {
+        join_all(blocks.map(|block| self.get_firehose_block_by_height(block)))
+            .await
+            .into_iter()
+            .collect::<Result<Vec<FirehoseBlock>>>()
     }
 }
