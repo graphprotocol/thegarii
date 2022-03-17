@@ -83,11 +83,11 @@ impl Env {
         })
     }
 
-    /// get $POLLING_RETRY_TIMES from env or use `3`
+    /// get $POLLING_RETRY_TIMES from env or use `20`
     pub fn polling_retry_times() -> Result<u8> {
         Ok(match env::var(POLLING_RETRY_TIMES) {
             Ok(times) => times.parse()?,
-            Err(_) => 3,
+            Err(_) => 10,
         })
     }
 
@@ -103,7 +103,7 @@ impl Env {
     pub fn polling_timeout() -> Result<u64> {
         Ok(match env::var(POLLING_TIMEOUT) {
             Ok(timeout) => timeout.parse()?,
-            Err(_) => 30_000,
+            Err(_) => 120_000,
         })
     }
 

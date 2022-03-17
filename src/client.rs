@@ -71,6 +71,7 @@ impl Client {
                 Ok(r) => return Ok(r),
                 Err(e) => {
                     if retried < self.retry {
+                        tokio::time::sleep(Duration::from_millis(1000)).await;
                         retried += 1;
                         continue;
                     }

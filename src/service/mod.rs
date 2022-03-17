@@ -24,11 +24,10 @@ pub trait Service: Sized {
     async fn start(&mut self) -> Result<()> {
         log::info!("start {} service...", Self::NAME);
 
-        if let Err(e) = self.run().await {
-            log::error!("{} service is down {}, restarting...", Self::NAME, e);
-            self.start().await?;
+        loop {
+            if let Err(e) = self.run().await {
+                log::warn!("{} service is down {}, restarting...", Self::NAME, e);
+            }
         }
-
-        Ok(())
     }
 }

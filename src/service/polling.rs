@@ -24,8 +24,8 @@ impl Polling {
     async fn polling(&mut self) -> Result<()> {
         loop {
             let end = (self.ptr + self.batch as u64).min((self.current - self.safe).max(0));
-
             log::info!("fetching blocks {}..{}/{}...", self.ptr, end, self.current);
+
             self.storage
                 .lock()
                 .await
