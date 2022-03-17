@@ -6,13 +6,21 @@ use crate::{Error, Result};
 use std::{env, fs, path::PathBuf};
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
+const DEFAULT_BLOCK_TIME: u64 = 10_000;
 const CHECKING_INTERVAL: &str = "CHECKING_INTERVAL";
+const DEFAULT_CHECKING_INTERVAL: u64 = 7_200_000;
 const DB_PATH: &str = "DB_PATH";
+const DEFAULT_DB_PATH: &str = "thegarii/thegarii.db";
 const ENDPOINTS: &str = "ENDPOINTS";
+const DEFAULT_ENDPOINTS: &str = "https://arweave.net";
 const POLLING_BATCH_BLOCKS: &str = "POLLING_BATCH_BLOCKS";
+const DEFAULT_POLLING_BATCH_BLOCKS: u16 = 50;
 const POLLING_RETRY_TIMES: &str = "POLLING_RETRY_TIMES";
+const DEFAULT_POLLING_RETRY_TIMES: u8 = 10;
 const POLLING_SAFE_BLOCKS: &str = "POLLING_SAFE_BLOCKS";
+const DEFAULT_POLLING_SAFE_BLOCKS: u64 = 20;
 const POLLING_TIMEOUT: &str = "POLLING_TIMEOUT";
+const DEFAULT_POLLING_TIMEOUT: u64 = 120_000;
 
 /// environments
 #[derive(Debug)]
@@ -36,28 +44,28 @@ pub struct Env {
 }
 
 impl Env {
-    /// get $BLOCK_TIME from env or use `10_000`
+    /// get $BLOCK_TIME from env or use DEFAULT_BLOCK_TIME
     pub fn block_time() -> Result<u64> {
         Ok(match env::var(BLOCK_TIME) {
             Ok(time) => time.parse()?,
-            Err(_) => 10_000,
+            Err(_) => DEFAULT_BLOCK_TIME,
         })
     }
 
-    /// get $CHECKING_INTERVAL from env or use `7_200_000`
+    /// get $CHECKING_INTERVAL from env or use $DEFAULT_CHECKING_INTERVAL
     pub fn checking_interval() -> Result<u64> {
         Ok(match env::var(CHECKING_INTERVAL) {
             Ok(interval) => interval.parse()?,
-            Err(_) => 7_200_000,
+            Err(_) => DEFAULT_CHECKING_INTERVAL,
         })
     }
 
-    /// get $DB_PATH from env or use `$DATA_DIR/thegarii/thegarii.db`
+    /// get $DB_PATH from env or use `$DATA_DIR/$DEFAULT_DB_PATH`
     pub fn db_path() -> Result<PathBuf> {
         let path = match env::var(DB_PATH).map(PathBuf::from) {
             Ok(p) => p,
             Err(_) => dirs::data_dir()
-                .map(|p| p.join("thegarii/thegarii.db"))
+                .map(|p| p.join(DEFAULT_DB_PATH))
                 .ok_or(Error::NoDataDirectory)?,
         };
 
@@ -65,45 +73,45 @@ impl Env {
         Ok(path)
     }
 
-    /// get $ENDPOINTS from env or use `"https://arweave.net"`
+    /// get $ENDPOINTS from env or use $DEFAULT_ENDPOINTS
     pub fn endpoints() -> Result<Vec<String>> {
         let raw_endpoints = match env::var(ENDPOINTS) {
             Ok(endpoints) => endpoints,
-            Err(_) => "https://arweave.net".to_string(),
+            Err(_) => DEFAULT_ENDPOINTS.to_string(),
         };
 
         Ok(raw_endpoints.split(',').map(|e| e.to_string()).collect())
     }
 
-    /// get $POLLING_BATCH_BLOCKS from env or use `50`
+    /// get $POLLING_BATCH_BLOCKS from env or use $DEFAULT_POLLING_BATCH_BLOCKS
     pub fn polling_batch_blocks() -> Result<u16> {
         Ok(match env::var(POLLING_BATCH_BLOCKS) {
             Ok(blocks) => blocks.parse()?,
-            Err(_) => 50,
+            Err(_) => DEFAULT_POLLING_BATCH_BLOCKS,
         })
     }
 
-    /// get $POLLING_RETRY_TIMES from env or use `20`
+    /// get $POLLING_RETRY_TIMES from env or use $DEFAULT_POLLING_RETRY_TIMES
     pub fn polling_retry_times() -> Result<u8> {
         Ok(match env::var(POLLING_RETRY_TIMES) {
             Ok(times) => times.parse()?,
-            Err(_) => 10,
+            Err(_) => DEFAULT_POLLING_RETRY_TIMES,
         })
     }
 
-    /// get $POLLING_SAFE_BLOCKS from env or use `20`
+    /// get $POLLING_SAFE_BLOCKS from env or use $DEFAULT_POLLING_SAFE_BLOCKS
     pub fn polling_safe_blocks() -> Result<u64> {
         Ok(match env::var(POLLING_SAFE_BLOCKS) {
             Ok(interval) => interval.parse()?,
-            Err(_) => 20,
+            Err(_) => DEFAULT_POLLING_SAFE_BLOCKS,
         })
     }
 
-    /// get $POLLING_TIMEOUT from env or use `30_000`
+    /// get $POLLING_TIMEOUT from env or use $DEFAULT_POLLING_TIMEOUT
     pub fn polling_timeout() -> Result<u64> {
         Ok(match env::var(POLLING_TIMEOUT) {
             Ok(timeout) => timeout.parse()?,
-            Err(_) => 120_000,
+            Err(_) => DEFAULT_POLLING_TIMEOUT,
         })
     }
 
