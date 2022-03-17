@@ -15,20 +15,34 @@ pub struct Checking {
 }
 
 impl Checking {
+    /// check block continuous
+    ///
+    /// returns the missed block heights
+    pub async fn missing(storage: &Storage) -> Result<Vec<u64>> {
+        let last = storage.last()?;
+        let total = storage.count()?;
+
+        if total == last.height {
+            return Ok(vec![]);
+        }
+
+        let in_db = storage.map_keys(|key, _| {
+            let mut height = [0; 8];
+            height.copy_from_slice(key);
+            u64::from_le_bytes(height)
+        });
+
+        Ok((0..last.height).filter(|h| !in_db.contains(h)).collect())
+    }
+
     /// check missed blocks and re-poll
     pub async fn check(&self) -> Result<()> {
         let storage = self.storage.lock().await;
-        let count = storage.count()?;
-        let missed = storage.continuous()?;
+        let missing = Self::missing(&storage).await?;
 
-        log::info!(
-            "checking blocks {}/{}, missed: {}.",
-            count - missed.len() as u64,
-            count,
-            missed.len()
-        );
-        if !missed.is_empty() {
-            storage.write(self.client.poll(missed.into_iter()).await?)?;
+        log::info!("checking blocks, missing: {:?}.", missing,);
+        if !missing.is_empty() {
+            storage.write(self.client.poll(missing.into_iter()).await?)?;
         }
 
         Ok(())

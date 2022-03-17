@@ -32,7 +32,7 @@ impl Polling {
                 .write(self.client.poll(self.ptr..end).await?)?;
 
             self.ptr = end;
-            if end > self.current {
+            if self.ptr + self.batch as u64 > self.current {
                 tokio::time::sleep(Duration::from_millis(self.safe * self.block_time)).await;
                 self.current = self.client.get_current_block().await?.height;
             }

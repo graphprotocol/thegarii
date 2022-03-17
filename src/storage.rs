@@ -7,7 +7,7 @@ use rocksdb::{IteratorMode, WriteBatch, DB};
 use std::path::{Path, PathBuf};
 
 /// firehose block storage
-pub struct Storage(DB);
+pub struct Storage(pub DB);
 
 impl Storage {
     /// new storage
@@ -15,28 +15,12 @@ impl Storage {
         Ok(Self(DB::open_default(db_path)?))
     }
 
-    /// check block continuous
-    ///
-    /// returns the missed block heights
-    pub fn continuous(&self) -> Result<Vec<u64>> {
-        let last = self.last()?;
-        let total = self.count()?;
-
-        if total == last.height {
-            return Ok(vec![]);
-        }
-
-        let in_db = self
-            .0
+    /// map storage keys
+    pub fn map_keys<T>(&self, map: fn(&[u8], &[u8]) -> T) -> Vec<T> {
+        self.0
             .iterator(IteratorMode::Start)
-            .map(|(key, _)| {
-                let mut height = [0; 8];
-                height.copy_from_slice(&key);
-                u64::from_le_bytes(height)
-            })
-            .collect::<Vec<u64>>();
-
-        Ok((0..last.height).filter(|h| !in_db.contains(h)).collect())
+            .map(|(k, v)| map(&k, &v))
+            .collect::<Vec<T>>()
     }
 
     /// count blocks
