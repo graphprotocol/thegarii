@@ -32,7 +32,7 @@ impl Checking {
             u64::from_le_bytes(height)
         });
 
-        Ok((0..last.height).filter(|h| !in_db.contains(h)).collect())
+        Ok((0..total).filter(|h| !in_db.contains(h)).collect())
     }
 
     /// check missed blocks and re-poll
