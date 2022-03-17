@@ -23,6 +23,16 @@ impl Storage {
             .collect::<Vec<T>>()
     }
 
+    /// get missing block numbers
+    pub fn missing<Blocks>(&self, keys: Blocks) -> Vec<u64>
+    where
+        Blocks: Iterator<Item = u64> + Sized,
+    {
+        keys.into_iter()
+            .filter(|key| !self.0.key_may_exist(key.to_le_bytes()))
+            .collect()
+    }
+
     /// count blocks
     ///
     /// see https://github.com/facebook/rocksdb/blob/08809f5e6cd9cc4bc3958dd4d59457ae78c76660/include/rocksdb/db.h#L654-L689
