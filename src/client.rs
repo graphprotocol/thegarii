@@ -232,9 +232,24 @@ impl Client {
     where
         Blocks: Iterator<Item = u64> + Sized,
     {
-        join_all(blocks.map(|block| self.get_firehose_block_by_height(block)))
-            .await
-            .into_iter()
-            .collect::<Result<Vec<FirehoseBlock>>>()
+        let mut v = vec![];
+        let blocks = blocks.collect::<Vec<_>>();
+        let raw_futs = blocks.clone().into_iter().map(|block| self.get_firehose_block_by_height(block)).collect::<Vec<_>>();
+        let unpin_futs: Vec<_> = raw_futs.into_iter().map(Box::pin).collect();
+        let mut futs = unpin_futs;
+
+        while !futs.is_empty() {
+            match futures::future::select_all(futs).await {
+                (Ok(val), _index, remaining) => {
+                    v.push(val);
+                    futs = remaining;
+                }
+                (Err(_e), _index, remaining) => {
+                    log::error!("cannot pull block {:?}", blocks[_index]);
+                    futs = remaining;
+                }
+            }
+        }
+        Ok(v)
     }
 }
