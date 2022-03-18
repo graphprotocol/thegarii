@@ -3,7 +3,7 @@
 
 use std::io::Result;
 fn main() -> Result<()> {
-    println!("cargo:rerun-if-changed=proto");
+    println!("cargo:rerun-if-changed=./proto/block.proto");
     tonic_build::configure()
         .out_dir("src/protobuf")
         .format(true)
