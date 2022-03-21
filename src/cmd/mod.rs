@@ -5,15 +5,15 @@
 use crate::{Env, Result};
 use structopt::StructOpt;
 
+mod get;
 mod start;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
     /// start thegarii service
     Start(start::Start),
-    // #[structopt(subcommand)]
-    // start: start::Start,
-    // },
+    /// get a block from database or fetch it
+    Get(get::Get),
 }
 
 #[derive(StructOpt, Debug)]
@@ -47,6 +47,7 @@ impl Opt {
         let env = Env::new()?;
         match opt.command {
             Command::Start(start) => start.exec(env).await?,
+            Command::Get(get) => get.exec(env).await?,
         }
 
         Ok(())
