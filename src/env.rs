@@ -4,6 +4,7 @@
 //! App envorionments
 use crate::{Error, Result};
 use std::{env, fs, path::PathBuf};
+use structopt::StructOpt;
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
 const DEFAULT_BLOCK_TIME: u64 = 10_000;
@@ -22,6 +23,35 @@ const DEFAULT_POLLING_SAFE_BLOCKS: u64 = 20;
 const POLLING_TIMEOUT: &str = "POLLING_TIMEOUT";
 const DEFAULT_POLLING_TIMEOUT: u64 = 120_000;
 
+/// env arguments for CLI
+#[derive(Debug, StructOpt)]
+pub struct EnvArguments {
+    /// time cost for producing a new block in arweave
+    #[structopt(short, long)]
+    pub block_time: Option<u64>,
+    /// inverval for checking missed blocks
+    #[structopt(short, long)]
+    pub checking_interval: Option<u64>,
+    /// storage db path
+    #[structopt(short = "D", long)]
+    pub db_path: Option<PathBuf>,
+    /// client endpoints
+    #[structopt(short = "E", long)]
+    pub endpoints: Vec<String>,
+    /// how many blocks polling at one time
+    #[structopt(short = "B", long)]
+    pub polling_batch_blocks: Option<u16>,
+    /// safe blocks against to reorg in polling
+    #[structopt(short = "S", long)]
+    pub polling_safe_blocks: Option<u64>,
+    /// timeout of http requests
+    #[structopt(short = "T", long)]
+    pub polling_timeout: Option<u64>,
+    /// retry times when failed on http requests
+    #[structopt(short, long)]
+    pub polling_retry_times: Option<u8>,
+}
+
 /// environments
 #[derive(Debug)]
 pub struct Env {
@@ -37,7 +67,7 @@ pub struct Env {
     pub polling_batch_blocks: u16,
     /// safe blocks against to reorg in polling
     pub polling_safe_blocks: u64,
-    /// timeout of polling service
+    /// timeout of http requests
     pub polling_timeout: u64,
     /// retry times when failed on http requests
     pub polling_retry_times: u8,
@@ -129,6 +159,42 @@ impl Env {
         })
     }
 
+    /// derive env from arguments
+    pub fn from_args(args: EnvArguments) -> Result<Self> {
+        Ok(Self {
+            block_time: args.block_time.unwrap_or(Self::block_time()?),
+            checking_interval: args.checking_interval.unwrap_or(Self::checking_interval()?),
+            db_path: args.db_path.unwrap_or(Self::db_path()?),
+            endpoints: if args.endpoints.is_empty() {
+                Self::endpoints()?
+            } else {
+                args.endpoints
+            },
+            polling_batch_blocks: args
+                .polling_batch_blocks
+                .unwrap_or(Self::polling_batch_blocks()?),
+            polling_retry_times: args
+                .polling_retry_times
+                .unwrap_or(Self::polling_retry_times()?),
+            polling_safe_blocks: args
+                .polling_safe_blocks
+                .unwrap_or(Self::polling_safe_blocks()?),
+            polling_timeout: args.polling_timeout.unwrap_or(Self::polling_timeout()?),
+        })
+    }
+
+    /// set block time
+    pub fn with_block_time(&mut self, block_time: u64) -> &mut Self {
+        self.block_time = block_time;
+        self
+    }
+
+    /// set checking interval
+    pub fn with_checking_interval(&mut self, checking_interval: u64) -> &mut Self {
+        self.checking_interval = checking_interval;
+        self
+    }
+
     /// set db path
     pub fn with_db_path(&mut self, db_path: PathBuf) -> &mut Self {
         self.db_path = db_path;
@@ -138,6 +204,30 @@ impl Env {
     /// set endpoints
     pub fn with_endpoints(&mut self, endpoints: Vec<String>) -> &mut Self {
         self.endpoints = endpoints;
+        self
+    }
+
+    /// set polling batch blocks
+    pub fn with_polling_batch_blocks(&mut self, polling_batch_blocks: u16) -> &mut Self {
+        self.polling_batch_blocks = polling_batch_blocks;
+        self
+    }
+
+    /// set polling safe blocks
+    pub fn with_polling_safe_blocks(&mut self, polling_safe_blocks: u64) -> &mut Self {
+        self.polling_safe_blocks = polling_safe_blocks;
+        self
+    }
+
+    /// set polling timeout
+    pub fn with_polling_timeout(&mut self, polling_timeout: u64) -> &mut Self {
+        self.polling_timeout = polling_timeout;
+        self
+    }
+
+    /// set polling retry times
+    pub fn with_polling_retry_times(&mut self, polling_retry_times: u8) -> &mut Self {
+        self.polling_retry_times = polling_retry_times;
         self
     }
 }

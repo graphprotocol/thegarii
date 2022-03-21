@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //! thegarii commands
-use crate::{Env, Result};
+use crate::{Env, EnvArguments, Result};
 use structopt::StructOpt;
 
 mod start;
@@ -26,6 +26,9 @@ pub struct Opt {
     #[structopt(short, long)]
     pub debug: bool,
 
+    #[structopt(flatten)]
+    pub env: EnvArguments,
+
     /// commands
     #[structopt(subcommand)]
     pub command: Command,
@@ -44,7 +47,7 @@ impl Opt {
                 .init();
         }
 
-        let env = Env::new()?;
+        let env = Env::from_args(opt.env)?;
         match opt.command {
             Command::Start(start) => start.exec(env).await?,
         }

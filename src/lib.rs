@@ -16,7 +16,7 @@ pub mod types;
 pub use self::{
     client::Client,
     cmd::Opt,
-    env::Env,
+    env::{Env, EnvArguments},
     result::{Error, Result},
     storage::Storage,
 };
