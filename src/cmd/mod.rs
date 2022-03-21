@@ -6,14 +6,14 @@ use crate::{Env, Result};
 use structopt::StructOpt;
 
 mod start;
+mod syncing;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
     /// start thegarii service
     Start(start::Start),
-    // #[structopt(subcommand)]
-    // start: start::Start,
-    // },
+    /// show the syncing status
+    Syncing(syncing::Syncing),
 }
 
 #[derive(StructOpt, Debug)]
@@ -47,6 +47,7 @@ impl Opt {
         let env = Env::new()?;
         match opt.command {
             Command::Start(start) => start.exec(env).await?,
+            Command::Syncing(syncing) => syncing.exec(env).await?,
         }
 
         Ok(())
