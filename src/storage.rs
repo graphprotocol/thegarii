@@ -7,17 +7,23 @@ use rocksdb::{IteratorMode, WriteBatch, DB};
 use std::path::{Path, PathBuf};
 
 /// firehose block storage
-pub struct Storage(pub DB);
+pub struct Storage {
+    pub read: DB,
+    pub write: DB,
+}
 
 impl Storage {
     /// new storage
     pub fn new(db_path: &dyn AsRef<Path>) -> Result<Self> {
-        Ok(Self(DB::open_default(db_path)?))
+        Ok(Self {
+            read: DB::open_for_read_only(&Default::default(), db_path, false)?,
+            write: DB::open_default(db_path)?,
+        })
     }
 
     /// map storage keys
     pub fn map_keys<T>(&self, map: fn(&[u8], &[u8]) -> T) -> Vec<T> {
-        self.0
+        self.read
             .iterator(IteratorMode::Start)
             .map(|(k, v)| map(&k, &v))
             .collect::<Vec<T>>()
@@ -29,7 +35,7 @@ impl Storage {
         Blocks: Iterator<Item = u64> + Sized,
     {
         keys.into_iter()
-            .filter(|key| !self.0.key_may_exist(key.to_le_bytes()))
+            .filter(|key| !self.read.key_may_exist(key.to_le_bytes()))
             .collect()
     }
 
@@ -38,7 +44,7 @@ impl Storage {
     /// see https://github.com/facebook/rocksdb/blob/08809f5e6cd9cc4bc3958dd4d59457ae78c76660/include/rocksdb/db.h#L654-L689
     pub fn count(&self) -> Result<u64> {
         Ok(self
-            .0
+            .read
             .property_int_value("rocksdb.estimate-num-keys")?
             .unwrap_or(0))
     }
@@ -46,7 +52,7 @@ impl Storage {
     /// get the last block
     pub fn last(&self) -> Result<FirehoseBlock> {
         let (_, value) = self
-            .0
+            .read
             .iterator(IteratorMode::End)
             .next()
             .ok_or(Error::NoBlockExists)?;
@@ -57,7 +63,7 @@ impl Storage {
     /// get block
     pub fn get(&self, height: u64) -> Result<FirehoseBlock> {
         let block_bytes = self
-            .0
+            .read
             .get(height.to_le_bytes())?
             .ok_or(Error::BlockNotFound(height))?;
 
@@ -66,19 +72,10 @@ impl Storage {
 
     /// set block
     pub fn put(&self, block: FirehoseBlock) -> Result<()> {
-        self.0
+        self.write
             .put(block.height.to_le_bytes(), &bincode::serialize(&block)?)?;
 
         Ok(())
-    }
-
-    /// new read-only storage
-    pub fn read_only(db_path: &dyn AsRef<Path>) -> Result<Self> {
-        Ok(Self(DB::open_for_read_only(
-            &Default::default(),
-            db_path,
-            false,
-        )?))
     }
 
     /// batch write blocks into db
@@ -88,13 +85,13 @@ impl Storage {
             batch.put(b.height.to_le_bytes(), bincode::serialize(&b)?);
         }
 
-        self.0.write(batch)?;
+        self.write.write(batch)?;
         Ok(())
     }
 
     /// flush data to disk
     pub fn flush(&self) -> Result<()> {
-        self.0.flush()?;
+        self.write.flush()?;
 
         Ok(())
     }
