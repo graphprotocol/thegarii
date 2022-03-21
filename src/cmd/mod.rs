@@ -19,9 +19,6 @@ pub enum Command {
 #[derive(StructOpt, Debug)]
 #[structopt(name = "thegarii", author = "info@chainsafe.io")]
 pub struct Opt {
-    // A flag, true if used in the command line. Note doc comment will
-    // be used for the help message of the flag. The name of the
-    // argument will be, by default, based on the name of the field.
     /// Activate debug mode
     #[structopt(short, long)]
     pub debug: bool,

@@ -50,8 +50,8 @@ impl Service for Polling {
     async fn new(env: &Env, storage: Arc<Mutex<Storage>>) -> Result<Self> {
         let client = Client::new(
             env.endpoints.clone(),
-            Duration::from_millis(env.polling_timeout),
-            env.polling_retry_times,
+            Duration::from_millis(env.timeout),
+            env.retry,
         )?;
         let ptr = if let Ok(last) = storage.lock().await.last() {
             last.height

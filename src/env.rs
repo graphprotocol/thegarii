@@ -16,12 +16,12 @@ const ENDPOINTS: &str = "ENDPOINTS";
 const DEFAULT_ENDPOINTS: &str = "https://arweave.net";
 const POLLING_BATCH_BLOCKS: &str = "POLLING_BATCH_BLOCKS";
 const DEFAULT_POLLING_BATCH_BLOCKS: u16 = 50;
-const POLLING_RETRY_TIMES: &str = "POLLING_RETRY_TIMES";
-const DEFAULT_POLLING_RETRY_TIMES: u8 = 10;
+const RETRY: &str = "RETRY";
+const DEFAULT_RETRY: u8 = 10;
 const POLLING_SAFE_BLOCKS: &str = "POLLING_SAFE_BLOCKS";
 const DEFAULT_POLLING_SAFE_BLOCKS: u64 = 20;
-const POLLING_TIMEOUT: &str = "POLLING_TIMEOUT";
-const DEFAULT_POLLING_TIMEOUT: u64 = 120_000;
+const TIMEOUT: &str = "TIMEOUT";
+const DEFAULT_TIMEOUT: u64 = 120_000;
 
 /// env arguments for CLI
 #[derive(Debug, StructOpt)]
@@ -36,20 +36,20 @@ pub struct EnvArguments {
     #[structopt(short = "D", long)]
     pub db_path: Option<PathBuf>,
     /// client endpoints
-    #[structopt(short = "E", long)]
+    #[structopt(short, long)]
     pub endpoints: Vec<String>,
     /// how many blocks polling at one time
     #[structopt(short = "B", long)]
     pub polling_batch_blocks: Option<u16>,
     /// safe blocks against to reorg in polling
-    #[structopt(short = "S", long)]
+    #[structopt(short, long)]
     pub polling_safe_blocks: Option<u64>,
     /// timeout of http requests
-    #[structopt(short = "T", long)]
-    pub polling_timeout: Option<u64>,
+    #[structopt(short, long)]
+    pub timeout: Option<u64>,
     /// retry times when failed on http requests
     #[structopt(short, long)]
-    pub polling_retry_times: Option<u8>,
+    pub retry: Option<u8>,
 }
 
 /// environments
@@ -68,9 +68,9 @@ pub struct Env {
     /// safe blocks against to reorg in polling
     pub polling_safe_blocks: u64,
     /// timeout of http requests
-    pub polling_timeout: u64,
+    pub timeout: u64,
     /// retry times when failed on http requests
-    pub polling_retry_times: u8,
+    pub retry: u8,
 }
 
 impl Env {
@@ -121,11 +121,11 @@ impl Env {
         })
     }
 
-    /// get $POLLING_RETRY_TIMES from env or use $DEFAULT_POLLING_RETRY_TIMES
-    pub fn polling_retry_times() -> Result<u8> {
-        Ok(match env::var(POLLING_RETRY_TIMES) {
+    /// get $RETRY from env or use $DEFAULT_RETRY
+    pub fn retry() -> Result<u8> {
+        Ok(match env::var(RETRY) {
             Ok(times) => times.parse()?,
-            Err(_) => DEFAULT_POLLING_RETRY_TIMES,
+            Err(_) => DEFAULT_RETRY,
         })
     }
 
@@ -137,11 +137,11 @@ impl Env {
         })
     }
 
-    /// get $POLLING_TIMEOUT from env or use $DEFAULT_POLLING_TIMEOUT
-    pub fn polling_timeout() -> Result<u64> {
-        Ok(match env::var(POLLING_TIMEOUT) {
+    /// get $TIMEOUT from env or use $DEFAULT_TIMEOUT
+    pub fn timeout() -> Result<u64> {
+        Ok(match env::var(TIMEOUT) {
             Ok(timeout) => timeout.parse()?,
-            Err(_) => DEFAULT_POLLING_TIMEOUT,
+            Err(_) => DEFAULT_TIMEOUT,
         })
     }
 
@@ -153,9 +153,9 @@ impl Env {
             db_path: Self::db_path()?,
             endpoints: Self::endpoints()?,
             polling_batch_blocks: Self::polling_batch_blocks()?,
-            polling_retry_times: Self::polling_retry_times()?,
+            retry: Self::retry()?,
             polling_safe_blocks: Self::polling_safe_blocks()?,
-            polling_timeout: Self::polling_timeout()?,
+            timeout: Self::timeout()?,
         })
     }
 
@@ -173,13 +173,11 @@ impl Env {
             polling_batch_blocks: args
                 .polling_batch_blocks
                 .unwrap_or(Self::polling_batch_blocks()?),
-            polling_retry_times: args
-                .polling_retry_times
-                .unwrap_or(Self::polling_retry_times()?),
+            retry: args.retry.unwrap_or(Self::retry()?),
             polling_safe_blocks: args
                 .polling_safe_blocks
                 .unwrap_or(Self::polling_safe_blocks()?),
-            polling_timeout: args.polling_timeout.unwrap_or(Self::polling_timeout()?),
+            timeout: args.timeout.unwrap_or(Self::timeout()?),
         })
     }
 
@@ -220,14 +218,14 @@ impl Env {
     }
 
     /// set polling timeout
-    pub fn with_polling_timeout(&mut self, polling_timeout: u64) -> &mut Self {
-        self.polling_timeout = polling_timeout;
+    pub fn with_timeout(&mut self, timeout: u64) -> &mut Self {
+        self.timeout = timeout;
         self
     }
 
     /// set polling retry times
-    pub fn with_polling_retry_times(&mut self, polling_retry_times: u8) -> &mut Self {
-        self.polling_retry_times = polling_retry_times;
+    pub fn with_retry(&mut self, retry: u8) -> &mut Self {
+        self.retry = retry;
         self
     }
 }
