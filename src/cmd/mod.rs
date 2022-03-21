@@ -5,15 +5,18 @@
 use crate::{Env, Result};
 use structopt::StructOpt;
 
+mod backup;
+mod restore;
 mod start;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
-    /// start thegarii service
+    /// Start thegarii service
     Start(start::Start),
-    // #[structopt(subcommand)]
-    // start: start::Start,
-    // },
+    /// Restore blocks from path
+    Restore(restore::Restore),
+    /// Backup blocks to path
+    Backup(backup::Backup),
 }
 
 #[derive(StructOpt, Debug)]
@@ -47,6 +50,8 @@ impl Opt {
         let env = Env::new()?;
         match opt.command {
             Command::Start(start) => start.exec(env).await?,
+            Command::Restore(restore) => restore.exec(env).await?,
+            Command::Backup(backup) => backup.exec(env).await?,
         }
 
         Ok(())
