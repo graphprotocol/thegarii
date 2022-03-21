@@ -27,11 +27,13 @@ impl Polling {
             log::info!("fetching blocks {}..{}/{}...", self.ptr, end, self.current);
 
             let storage = self.storage.lock().await;
-            storage.write(
-                self.client
-                    .poll(storage.missing(self.ptr..end).into_iter())
-                    .await?,
-            )?;
+            storage
+                .write(
+                    self.client
+                        .poll(storage.missing(self.ptr..end).into_iter())
+                        .await?,
+                )
+                .await?;
 
             self.ptr = end;
             if self.ptr + self.batch as u64 > self.current {

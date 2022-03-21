@@ -42,7 +42,9 @@ impl Checking {
 
         log::info!("checking blocks, missing: {:?}.", missing,);
         if !missing.is_empty() {
-            storage.write(self.client.poll(missing.into_iter()).await?)?;
+            storage
+                .write(self.client.poll(missing.into_iter()).await?)
+                .await?;
         }
 
         Ok(())

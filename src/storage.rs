@@ -3,13 +3,17 @@
 
 #![allow(unused)]
 use crate::{env, types::FirehoseBlock, Error, Result};
+use futures::lock::Mutex;
 use rocksdb::{IteratorMode, WriteBatch, DB};
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 /// firehose block storage
 pub struct Storage {
     pub read: DB,
-    pub write: DB,
+    pub write: Arc<Mutex<DB>>,
 }
 
 impl Storage {
@@ -17,7 +21,7 @@ impl Storage {
     pub fn new(db_path: &dyn AsRef<Path>) -> Result<Self> {
         Ok(Self {
             read: DB::open_for_read_only(&Default::default(), db_path, false)?,
-            write: DB::open_default(db_path)?,
+            write: Arc::new(Mutex::new(DB::open_default(db_path)?)),
         })
     }
 
@@ -71,27 +75,28 @@ impl Storage {
     }
 
     /// set block
-    pub fn put(&self, block: FirehoseBlock) -> Result<()> {
-        self.write
-            .put(block.height.to_le_bytes(), &bincode::serialize(&block)?)?;
+    pub async fn put(&self, block: FirehoseBlock) -> Result<()> {
+        let db = self.write.lock().await;
+        db.put(block.height.to_le_bytes(), &bincode::serialize(&block)?)?;
 
         Ok(())
     }
 
     /// batch write blocks into db
-    pub fn write(&self, blocks: Vec<FirehoseBlock>) -> Result<()> {
+    pub async fn write(&self, blocks: Vec<FirehoseBlock>) -> Result<()> {
+        let db = self.write.lock().await;
         let mut batch = WriteBatch::default();
         for b in blocks {
             batch.put(b.height.to_le_bytes(), bincode::serialize(&b)?);
         }
 
-        self.write.write(batch)?;
+        db.write(batch)?;
         Ok(())
     }
 
     /// flush data to disk
-    pub fn flush(&self) -> Result<()> {
-        self.write.flush()?;
+    pub async fn flush(&self) -> Result<()> {
+        self.write.lock().await.flush()?;
 
         Ok(())
     }
