@@ -11,9 +11,6 @@ mod start;
 pub enum Command {
     /// start thegarii service
     Start(start::Start),
-    // #[structopt(subcommand)]
-    // start: start::Start,
-    // },
 }
 
 #[derive(StructOpt, Debug)]
