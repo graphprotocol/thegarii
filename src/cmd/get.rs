@@ -23,6 +23,7 @@ impl Get {
         let block = if let Ok(block) = storage.get(self.height) {
             block
         } else {
+            log::warn!("block not exists, fetching from endpoints...");
             let client = Client::from_env()?;
             client.get_firehose_block_by_height(self.height).await?
         };
