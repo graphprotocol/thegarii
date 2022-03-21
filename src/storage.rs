@@ -11,8 +11,9 @@ use std::{
 };
 
 /// firehose block storage
+#[derive(Clone)]
 pub struct Storage {
-    pub read: DB,
+    pub read: Arc<DB>,
     pub write: Arc<Mutex<DB>>,
 }
 
@@ -20,7 +21,7 @@ impl Storage {
     /// new storage
     pub fn new(db_path: &dyn AsRef<Path>) -> Result<Self> {
         Ok(Self {
-            read: DB::open_for_read_only(&Default::default(), db_path, false)?,
+            read: Arc::new(DB::open_for_read_only(&Default::default(), db_path, false)?),
             write: Arc::new(Mutex::new(DB::open_default(db_path)?)),
         })
     }
