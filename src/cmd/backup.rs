@@ -24,7 +24,7 @@ impl Backup {
 
         let storage = Storage::new(&env.db_path)?;
         let mut engine = BackupEngine::open(&BackupEngineOptions::default(), &self.backup_path)?;
-        engine.create_new_backup_flush(&storage.0, true)?;
+        engine.create_new_backup_flush(&storage.read, true)?;
 
         Ok(())
     }
