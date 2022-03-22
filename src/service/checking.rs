@@ -8,6 +8,7 @@ use std::time::Duration;
 
 /// checking service
 pub struct Checking {
+    batch: u16,
     client: Client,
     storage: Storage,
     interval: u64,
@@ -21,7 +22,7 @@ impl Checking {
         let last = storage.last()?;
         let total = storage.count()?;
 
-        if total == last.height {
+        if total == last.height + 1 {
             return Ok(vec![]);
         }
 
@@ -31,17 +32,33 @@ impl Checking {
             u64::from_le_bytes(height)
         });
 
-        Ok((0..total).filter(|h| !in_db.contains(h)).collect())
+        let latest = in_db.iter().max().unwrap_or(&0);
+        Ok((0..*latest).filter(|h| !in_db.contains(h)).collect())
     }
 
     /// check missed blocks and re-poll
     pub async fn check(&self) -> Result<()> {
-        let missing = Self::missing(&self.storage).await?;
+        let mut missing = Self::missing(&self.storage).await?;
+        if missing.is_empty() {
+            return Ok(());
+        }
 
-        log::info!("checking blocks, missing: {:?}.", missing,);
-        if !missing.is_empty() {
+        log::info!("checking blocks, missing {:?} blocks", missing.len());
+        while !missing.is_empty() {
+            let mut next = missing.clone();
+            if missing.len() > self.batch as usize {
+                missing = next.split_off(self.batch as usize);
+            } else {
+                missing.drain(..);
+            }
+
+            log::info!(
+                "refetching blocks {:?}..{:?}...",
+                next.first().unwrap_or(&0),
+                next.last().unwrap_or(&0),
+            );
             self.storage
-                .write(self.client.poll(missing.into_iter()).await?)
+                .write(self.client.poll(next.into_iter()).await?)
                 .await?;
         }
 
@@ -70,6 +87,7 @@ impl Service for Checking {
         )?;
 
         Ok(Self {
+            batch: env.polling_batch_blocks,
             client,
             storage,
             interval: env.checking_interval,

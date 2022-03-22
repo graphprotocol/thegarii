@@ -8,7 +8,7 @@ use std::{env, fs, path::PathBuf};
 const BLOCK_TIME: &str = "BLOCK_TIME";
 const DEFAULT_BLOCK_TIME: u64 = 10_000;
 const CHECKING_INTERVAL: &str = "CHECKING_INTERVAL";
-const DEFAULT_CHECKING_INTERVAL: u64 = 7_200_000;
+const DEFAULT_CHECKING_INTERVAL: u64 = 3_000;
 const DB_PATH: &str = "DB_PATH";
 const DEFAULT_DB_PATH: &str = "thegarii/thegarii.db";
 const ENDPOINTS: &str = "ENDPOINTS";
