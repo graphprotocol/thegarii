@@ -46,6 +46,7 @@ pub struct Block {
     #[serde(deserialize_with = "number_or_string")]
     pub block_size: String,
     // - 269510 <= block height < 422250
+    #[serde(default)]
     #[serde(deserialize_with = "option_number_or_string")]
     pub cumulative_diff: Option<String>,
     pub hash_list_merkle: Option<String>,

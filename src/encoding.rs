@@ -27,15 +27,17 @@ pub fn option_number_or_string<'de, D>(deserializer: D) -> Result<Option<String>
 where
     D: Deserializer<'de>,
 {
-    let v = Value::deserialize(deserializer)?;
-    Ok(match v {
-        Value::Number(n) => Some(n.to_string()),
-        Value::String(s) => Some(s),
-        Value::Null => None,
-        _ => {
-            return Err(de::Error::custom(
-                "invalid diff type, expect number or string",
-            ))
-        }
-    })
+    if let Ok(v) = Value::deserialize(deserializer) {
+        return Ok(match v {
+            Value::Number(n) => Some(n.to_string()),
+            Value::String(s) => Some(s),
+            _ => {
+                return Err(de::Error::custom(
+                    "invalid diff type, expect number or string",
+                ))
+            }
+        });
+    }
+
+    Ok(None)
 }

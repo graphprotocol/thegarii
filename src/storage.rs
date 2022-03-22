@@ -40,7 +40,7 @@ impl Storage {
         Blocks: Iterator<Item = u64> + Sized,
     {
         keys.into_iter()
-            .filter(|key| !self.read.key_may_exist(key.to_le_bytes()))
+            .filter(|key| self.get(*key).is_err())
             .collect()
     }
 
