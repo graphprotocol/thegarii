@@ -5,15 +5,24 @@
 use crate::{Env, Result};
 use structopt::StructOpt;
 
+mod backup;
+mod get;
+mod restore;
 mod start;
 mod syncing;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
-    /// start thegarii service
+    /// Start thegarii service
     Start(start::Start),
     /// show the syncing status
     Syncing(syncing::Syncing),
+    /// get a block from database or fetch it
+    Get(get::Get),
+    /// Restore blocks from path
+    Restore(restore::Restore),
+    /// Backup blocks to path
+    Backup(backup::Backup),
 }
 
 #[derive(StructOpt, Debug)]
@@ -48,6 +57,9 @@ impl Opt {
         match opt.command {
             Command::Start(start) => start.exec(env).await?,
             Command::Syncing(syncing) => syncing.exec(env).await?,
+            Command::Get(get) => get.exec(env).await?,
+            Command::Restore(restore) => restore.exec(env).await?,
+            Command::Backup(backup) => backup.exec(env).await?,
         }
 
         Ok(())
