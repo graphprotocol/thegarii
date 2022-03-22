@@ -5,8 +5,7 @@
 
 use crate::{service::Service, Client, Env, Result, Storage};
 use async_trait::async_trait;
-use futures::lock::Mutex;
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 /// polling service
 pub struct Polling {
@@ -15,7 +14,7 @@ pub struct Polling {
     client: Client,
     current: u64,
     ptr: u64,
-    storage: Arc<Mutex<Storage>>,
+    storage: Storage,
     safe: u64,
 }
 
@@ -26,12 +25,13 @@ impl Polling {
             let end = (self.ptr + self.batch as u64).min((self.current - self.safe).max(0));
             log::info!("fetching blocks {}..{}/{}...", self.ptr, end, self.current);
 
-            let storage = self.storage.lock().await;
-            storage.write(
-                self.client
-                    .poll(storage.missing(self.ptr..end).into_iter())
-                    .await?,
-            )?;
+            self.storage
+                .write(
+                    self.client
+                        .poll(self.storage.missing(self.ptr..end).into_iter())
+                        .await?,
+                )
+                .await?;
 
             self.ptr = end;
             if self.ptr + self.batch as u64 > self.current {
@@ -47,13 +47,13 @@ impl Service for Polling {
     const NAME: &'static str = "polling";
 
     /// new polling service
-    async fn new(env: &Env, storage: Arc<Mutex<Storage>>) -> Result<Self> {
+    async fn new(env: &Env, storage: Storage) -> Result<Self> {
         let client = Client::new(
             env.endpoints.clone(),
             Duration::from_millis(env.polling_timeout),
             env.polling_retry_times,
         )?;
-        let ptr = if let Ok(last) = storage.lock().await.last() {
+        let ptr = if let Ok(last) = storage.last() {
             last.height
         } else {
             0
