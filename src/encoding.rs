@@ -21,3 +21,21 @@ where
         }
     })
 }
+
+/// parse number or string to string
+pub fn option_number_or_string<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let v = Value::deserialize(deserializer)?;
+    Ok(match v {
+        Value::Number(n) => Some(n.to_string()),
+        Value::String(s) => Some(s),
+        Value::Null => None,
+        _ => {
+            return Err(de::Error::custom(
+                "invalid diff type, expect number or string",
+            ))
+        }
+    })
+}
