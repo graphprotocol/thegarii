@@ -9,12 +9,15 @@ mod backup;
 mod get;
 mod restore;
 mod start;
+mod syncing;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
     /// Start thegarii service
     Start(start::Start),
-    /// get a block from database or fetch it
+    /// Show the syncing status
+    Syncing(syncing::Syncing),
+    /// Get a block from database or fetch it
     Get(get::Get),
     /// Restore blocks from path
     Restore(restore::Restore),
@@ -23,7 +26,7 @@ pub enum Command {
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "thegarii", author = "info@chainsafe.io")]
+#[structopt(name = "thegaril", author = "info@chainsafe.io")]
 pub struct Opt {
     // A flag, true if used in the command line. Note doc comment will
     // be used for the help message of the flag. The name of the
@@ -52,10 +55,11 @@ impl Opt {
 
         let env = Env::new()?;
         match opt.command {
-            Command::Start(start) => start.exec(env).await?,
+            Command::Backup(backup) => backup.exec(env).await?,
             Command::Get(get) => get.exec(env).await?,
             Command::Restore(restore) => restore.exec(env).await?,
-            Command::Backup(backup) => backup.exec(env).await?,
+            Command::Start(start) => start.exec(env).await?,
+            Command::Syncing(syncing) => syncing.exec(env).await?,
         }
 
         Ok(())
