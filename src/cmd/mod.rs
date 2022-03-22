@@ -5,16 +5,28 @@
 use crate::{Env, EnvArguments, Result};
 use structopt::StructOpt;
 
+mod backup;
+mod get;
+mod restore;
 mod start;
+mod syncing;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
-    /// start thegarii service
+    /// Backup blocks to path
+    Backup(backup::Backup),
+    /// Get a block from database or fetch it
+    Get(get::Get),
+    /// Restore blocks from path
+    Restore(restore::Restore),
+    /// Start thegarii service
     Start(start::Start),
+    /// Show the syncing status
+    Syncing(syncing::Syncing),
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "thegarii", author = "info@chainsafe.io")]
+#[structopt(name = "thegaril", author = "info@chainsafe.io")]
 pub struct Opt {
     /// Activate debug mode
     #[structopt(short, long)]
@@ -43,7 +55,11 @@ impl Opt {
 
         let env = Env::from_args(opt.env)?;
         match opt.command {
+            Command::Backup(backup) => backup.exec(env).await?,
+            Command::Get(get) => get.exec(env).await?,
+            Command::Restore(restore) => restore.exec(env).await?,
             Command::Start(start) => start.exec(env).await?,
+            Command::Syncing(syncing) => syncing.exec(env).await?,
         }
 
         Ok(())

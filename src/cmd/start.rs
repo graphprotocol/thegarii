@@ -6,8 +6,7 @@ use crate::{
     service::{Checking, Polling, Service},
     Env, Result, Storage,
 };
-use futures::{future::join_all, join, lock::Mutex};
-use std::sync::Arc;
+use futures::{future::join_all, join};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -16,10 +15,10 @@ pub struct Start {}
 impl Start {
     /// start services
     pub async fn exec(&self, env: Env) -> Result<()> {
-        let storage = Arc::new(Mutex::new(Storage::new(&env.db_path)?));
+        let storage = Storage::new(&env.db_path)?;
         let (polling, checking) = join!(
             Polling::new(&env, storage.clone()),
-            Checking::new(&env, storage.clone())
+            Checking::new(&env, storage)
         );
 
         join_all(vec![polling?.start(), checking?.start()])

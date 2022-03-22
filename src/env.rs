@@ -29,7 +29,7 @@ pub struct EnvArguments {
     /// time cost for producing a new block in arweave
     #[structopt(short, long)]
     pub block_time: Option<u64>,
-    /// inverval for checking missed blocks
+    /// inverval for checking missing blocks
     #[structopt(short, long)]
     pub checking_interval: Option<u64>,
     /// storage db path

@@ -7,15 +7,13 @@ mod checking;
 mod polling;
 
 pub use self::{checking::Checking, polling::Polling};
-use futures::lock::Mutex;
-use std::sync::Arc;
 
 #[async_trait]
 pub trait Service: Sized {
     const NAME: &'static str;
 
     /// new service instance
-    async fn new(env: &Env, storage: Arc<Mutex<Storage>>) -> Result<Self>;
+    async fn new(env: &Env, storage: Storage) -> Result<Self>;
 
     /// run service
     async fn run(&mut self) -> Result<()>;
