@@ -57,9 +57,9 @@ impl Checking {
                 next.first().unwrap_or(&0),
                 next.last().unwrap_or(&0),
             );
-            self.storage
-                .write(self.client.poll(next.into_iter()).await?)
-                .await?;
+
+            let blocks = self.client.poll(next.into_iter()).await?;
+            self.storage.write(blocks).await?;
         }
 
         Ok(())

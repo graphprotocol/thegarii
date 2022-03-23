@@ -22,6 +22,8 @@ pub enum Error {
     NoDataDirectory,
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
+    #[error("can not write data in read-only mode")]
+    ReadOnlyDatabase,
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
