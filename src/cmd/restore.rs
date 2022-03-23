@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{Env, Result};
 use rocksdb::backup::{BackupEngine, BackupEngineOptions, RestoreOptions};
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

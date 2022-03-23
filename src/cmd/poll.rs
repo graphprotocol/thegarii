@@ -31,7 +31,7 @@ impl Poll {
 
         let pad = |elapsed: &mut String| {
             if !elapsed.is_empty() {
-                elapsed.push_str(" ");
+                elapsed.push(' ');
             }
         };
 
@@ -84,7 +84,7 @@ impl Poll {
                 blocks.drain(..);
             }
 
-            _blocks.sort();
+            _blocks.sort_unstable();
             log::info!("polling blocks {:?}...", _blocks);
             client.poll(_blocks.into_iter()).await?;
         }

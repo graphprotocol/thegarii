@@ -15,7 +15,7 @@ pub struct SyncingStatus {
 
 impl Syncing {
     /// start services
-    pub async fn exec(&self, mut env: Env) -> Result<()> {
+    pub async fn exec(&self, env: Env) -> Result<()> {
         let client = Client::from_env()?;
         let storage = Storage::new(&env.db_path)?;
 
