@@ -7,23 +7,14 @@ use crate::{
     Env, Result, Storage,
 };
 use futures::{future::join_all, join};
-use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-pub struct Start {
-    /// database path
-    #[structopt(short, long)]
-    pub db_path: Option<PathBuf>,
-}
+pub struct Start {}
 
 impl Start {
     /// start services
-    pub async fn exec(&self, mut env: Env) -> Result<()> {
-        if let Some(db_path) = &self.db_path {
-            env.with_db_path(db_path.into());
-        }
-
+    pub async fn exec(&self, env: Env) -> Result<()> {
         let storage = Storage::new(&env.db_path)?;
         let (polling, checking) = join!(
             Polling::new(&env, storage.clone()),
