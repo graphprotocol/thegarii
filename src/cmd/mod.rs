@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //! thegarii commands
-use crate::{Env, Result};
+use crate::{Env, EnvArguments, Result};
 use structopt::StructOpt;
 
 mod backup;
@@ -13,27 +13,27 @@ mod syncing;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
-    /// Start thegarii service
-    Start(start::Start),
-    /// Show the syncing status
-    Syncing(syncing::Syncing),
+    /// Backup blocks to path
+    Backup(backup::Backup),
     /// Get a block from database or fetch it
     Get(get::Get),
     /// Restore blocks from path
     Restore(restore::Restore),
-    /// Backup blocks to path
-    Backup(backup::Backup),
+    /// Start thegarii service
+    Start(start::Start),
+    /// Show the syncing status
+    Syncing(syncing::Syncing),
 }
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "thegaril", author = "info@chainsafe.io")]
 pub struct Opt {
-    // A flag, true if used in the command line. Note doc comment will
-    // be used for the help message of the flag. The name of the
-    // argument will be, by default, based on the name of the field.
     /// Activate debug mode
     #[structopt(short, long)]
     pub debug: bool,
+
+    #[structopt(flatten)]
+    pub env: EnvArguments,
 
     /// commands
     #[structopt(subcommand)]
@@ -53,7 +53,7 @@ impl Opt {
                 .init();
         }
 
-        let env = Env::new()?;
+        let env = Env::from_args(opt.env)?;
         match opt.command {
             Command::Backup(backup) => backup.exec(env).await?,
             Command::Get(get) => get.exec(env).await?,

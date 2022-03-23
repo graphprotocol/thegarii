@@ -46,13 +46,13 @@ impl Client {
         let env = Env::new()?;
         let client = ClientBuilder::new()
             .gzip(true)
-            .timeout(Duration::from_millis(env.polling_timeout))
+            .timeout(Duration::from_millis(env.timeout))
             .build()?;
 
         Ok(Self {
             client,
             endpoints: env.endpoints,
-            retry: env.polling_retry_times,
+            retry: env.retry,
         })
     }
 
