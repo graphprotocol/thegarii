@@ -1,4 +1,4 @@
-FROM debian:bullseye as build
+FROM debian:bullseye
 RUN apt-get update && apt-get install -y git curl build-essential cmake pkg-config libssl-dev libsqlite3-dev libgmp-dev ncurses-bin libncurses-dev net-tools ufw
 WORKDIR /usr/src
 RUN git clone --depth=1 -b maint-24 https://github.com/erlang/otp erlang-otp
