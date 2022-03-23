@@ -19,7 +19,7 @@ impl Get {
             env.with_db_path(db_path.into());
         }
 
-        let storage = Storage::new(&env.db_path)?;
+        let storage = Storage::read_only(&env.db_path)?;
         let block = if let Ok(block) = storage.get(self.height) {
             block
         } else {
