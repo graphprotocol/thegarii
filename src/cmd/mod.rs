@@ -7,22 +7,25 @@ use structopt::StructOpt;
 
 mod backup;
 mod get;
+mod poll;
 mod restore;
 mod start;
 mod syncing;
 
 #[derive(StructOpt, Debug)]
 pub enum Command {
+    /// Backup blocks to path
+    Backup(backup::Backup),
+    /// Get a block from database or fetch it
+    Get(get::Get),
+    /// Dry-run random polling with time estimate
+    Poll(poll::Poll),
+    /// Restore blocks from path
+    Restore(restore::Restore),
     /// Start thegarii service
     Start(start::Start),
     /// Show the syncing status
     Syncing(syncing::Syncing),
-    /// Get a block from database or fetch it
-    Get(get::Get),
-    /// Restore blocks from path
-    Restore(restore::Restore),
-    /// Backup blocks to path
-    Backup(backup::Backup),
 }
 
 #[derive(StructOpt, Debug)]
@@ -57,6 +60,7 @@ impl Opt {
         match opt.command {
             Command::Backup(backup) => backup.exec(env).await?,
             Command::Get(get) => get.exec(env).await?,
+            Command::Poll(poll) => poll.exec(env).await?,
             Command::Restore(restore) => restore.exec(env).await?,
             Command::Start(start) => start.exec(env).await?,
             Command::Syncing(syncing) => syncing.exec(env).await?,
