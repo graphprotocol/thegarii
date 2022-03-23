@@ -93,7 +93,7 @@ impl Poll {
         log::info!("\n{:#?}", env);
         log::info!("time cost: {}", Self::time(now.elapsed().as_secs()));
         log::info!(
-            "estimate fully sync will cost: {}",
+            "estimate fully sync will take: {}",
             Self::time(now.elapsed().as_secs() * current / self.blocks)
         );
         Ok(())
