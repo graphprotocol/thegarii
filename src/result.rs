@@ -29,6 +29,8 @@ pub enum Error {
     #[error(transparent)]
     RocksDB(#[from] rocksdb::Error),
     #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+    #[error(transparent)]
     Var(#[from] VarError),
 }
 

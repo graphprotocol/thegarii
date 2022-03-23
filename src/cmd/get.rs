@@ -28,7 +28,7 @@ impl Get {
             client.get_firehose_block_by_height(self.height).await?
         };
 
-        println!("{:#?}", block);
+        println!("{}", serde_json::to_string_pretty(&block)?);
         Ok(())
     }
 }
