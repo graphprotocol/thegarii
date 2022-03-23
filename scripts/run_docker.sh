@@ -1,14 +1,6 @@
 #!/bin/bash
 
-ifconfig
-
-pwd
-
-echo "hello..."
-
-ls -la .
-ls -la /opt/arweave/
-ls -la /opt/arweave/bin
+set -e
 
 epmd -daemon
 
