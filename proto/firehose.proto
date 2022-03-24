@@ -3,6 +3,7 @@ syntax = "proto3";
 package sf.firehose.v1;
 
 import "google/protobuf/any.proto";
+import "block.proto";
 
 option go_package = "github.com/streamingfast/pbgo/sf/firehose/v1;pbfirehose";
 
@@ -84,7 +85,7 @@ message Response {
   // - sf.ethereum.codec.v1.Block
   // - sf.near.codec.v1.Block
   // - sf.solana.codec.v1.Block
-  google.protobuf.Any block = 1;
+  cs.arweave.codec.v1.Block block = 1;
   ForkStep step = 6;
   string cursor = 10;
 }
