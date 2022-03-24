@@ -1,4 +1,10 @@
-~/Applications/arweave/bin/start mine \
+#!/bin/bash
+
+set -e
+
+epmd -daemon
+
+/opt/arweave/bin/start mine \
  mining_addr nKn0ZQET1VcpW6_OdpVOP-Pm6b-_BwagHTg3BtByVkA \
  peer 188.166.200.45 \
  peer 188.166.192.169 \
