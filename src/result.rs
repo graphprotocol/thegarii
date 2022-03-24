@@ -22,10 +22,14 @@ pub enum Error {
     NoDataDirectory,
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
+    #[error("can not write data in read-only mode")]
+    ReadOnlyDatabase,
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
     RocksDB(#[from] rocksdb::Error),
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
     #[error(transparent)]
     Var(#[from] VarError),
 }

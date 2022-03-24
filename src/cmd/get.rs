@@ -19,7 +19,7 @@ impl Get {
             env.with_db_path(db_path.into());
         }
 
-        let storage = Storage::new(&env.db_path)?;
+        let storage = Storage::read_only(&env.db_path)?;
         let block = if let Ok(block) = storage.get(self.height) {
             block
         } else {
@@ -28,7 +28,7 @@ impl Get {
             client.get_firehose_block_by_height(self.height).await?
         };
 
-        println!("{:#?}", block);
+        println!("{}", serde_json::to_string_pretty(&block)?);
         Ok(())
     }
 }
