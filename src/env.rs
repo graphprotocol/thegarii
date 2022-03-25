@@ -42,7 +42,7 @@ pub struct EnvArguments {
     pub endpoints: Vec<String>,
     /// grpc address
     #[structopt(short, long)]
-    pub grpc_addr: String,
+    pub grpc_addr: Option<String>,
     /// how many blocks polling at one time
     #[structopt(short = "B", long)]
     pub polling_batch_blocks: Option<u16>,
@@ -188,10 +188,10 @@ impl Env {
             } else {
                 args.endpoints
             },
-            grpc_addr: if args.grpc_addr.is_empty() {
-                Self::grpc_addr()?
+            grpc_addr: if let Some(addr) = args.grpc_addr {
+                addr.parse()?
             } else {
-                args.grpc_addr.parse()?
+                Self::grpc_addr()?
             },
             polling_batch_blocks: args
                 .polling_batch_blocks
