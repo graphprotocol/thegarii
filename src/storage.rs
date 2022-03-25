@@ -10,6 +10,8 @@ use std::{
     sync::Arc,
 };
 
+const LATEST_BLOCK_STROAGE_KEY: [u8; 13] = *b"_LATEST_BLOCK";
+
 /// firehose block storage
 #[derive(Clone)]
 pub struct Storage {
@@ -97,6 +99,42 @@ impl Storage {
     //
     // write APIs
     //
+
+    /// query lastest block number from db
+    pub fn latest(&self) -> Result<u64> {
+        let mut buf = [0; 8];
+        let mut latest = self
+            .read
+            .get(&LATEST_BLOCK_STROAGE_KEY)?
+            .ok_or(Error::NoLatestBlockRecord)?;
+        buf.copy_from_slice(&mut latest);
+
+        Ok(u64::from_le_bytes(buf))
+    }
+
+    /// get mut latest block
+    pub async fn latest_mut(&self, maybe_latest: u64) -> Result<u64> {
+        let mut should_update = false;
+        let next = if let Ok(latest) = self.latest() {
+            if maybe_latest > latest {
+                should_update = true;
+                maybe_latest
+            } else {
+                latest
+            }
+        } else {
+            maybe_latest
+        };
+
+        if should_update {
+            let db = self.write.as_ref().ok_or(Error::ReadOnlyDatabase)?;
+            db.lock()
+                .await
+                .put(&LATEST_BLOCK_STROAGE_KEY, next.to_le_bytes());
+        }
+
+        Ok(next)
+    }
 
     /// set block
     pub async fn put(&self, block: FirehoseBlock) -> Result<()> {

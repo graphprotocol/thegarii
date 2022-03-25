@@ -22,6 +22,8 @@ pub enum Error {
     NoBlockExists,
     #[error("could not find data directory on this machine")]
     NoDataDirectory,
+    #[error("no block has been marked as latest block rn")]
+    NoLatestBlockRecord,
     #[error("can not write data in read-only mode")]
     ReadOnlyDatabase,
     #[error(transparent)]
