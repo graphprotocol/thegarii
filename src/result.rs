@@ -3,15 +3,13 @@
 
 //! the graii results
 
-use std::{env::VarError, io, num::ParseIntError};
+use std::{env::VarError, io, net::AddrParseError, num::ParseIntError};
 
 /// the graii errors
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("no endpoints provided")]
     EmptyEndpoints,
-    #[error(transparent)]
-    Bincode(#[from] bincode::Error),
     #[error("block {0} not found")]
     BlockNotFound(u64),
     #[error(transparent)]
@@ -21,11 +19,17 @@ pub enum Error {
     #[error("could not find data directory on this machine")]
     NoDataDirectory,
     #[error(transparent)]
+    AddrParseError(#[from] AddrParseError),
+    #[error(transparent)]
+    Bincode(#[from] bincode::Error),
+    #[error(transparent)]
     ParseInt(#[from] ParseIntError),
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
     RocksDB(#[from] rocksdb::Error),
+    #[error(transparent)]
+    Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]
     Var(#[from] VarError),
 }

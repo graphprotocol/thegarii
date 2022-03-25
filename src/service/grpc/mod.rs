@@ -3,16 +3,19 @@
 
 //! gRPC service
 
-use crate::{pb::stream_server::StreamServer, service::Service, Env, Result, Storage};
+use crate::{pb::stream_server::StreamServer, service::Service, Client, Env, Result, Storage};
 use async_trait::async_trait;
 use handler::StreamHandler;
+use std::{net::SocketAddr, time::Duration};
+use tonic::transport::Server;
 
 pub mod handler;
 pub mod types;
 
 /// gRPC service
 pub struct Grpc {
-    _server: StreamServer<handler::StreamHandler>,
+    addr: SocketAddr,
+    server: StreamServer<handler::StreamHandler>,
 }
 
 #[async_trait]
@@ -20,14 +23,25 @@ impl Service for Grpc {
     const NAME: &'static str = "grpc";
 
     /// new gRPC service
-    async fn new(_env: &Env, _storage: Storage) -> Result<Self> {
+    async fn new(env: &Env, storage: Storage) -> Result<Self> {
+        let client = Client::new(
+            env.endpoints.clone(),
+            Duration::from_millis(env.timeout),
+            env.retry,
+        )?;
+
         Ok(Self {
-            _server: StreamServer::new(StreamHandler),
+            addr: env.grpc_addr,
+            server: StreamServer::new(StreamHandler::new(client, storage)),
         })
     }
 
     /// run gRPC service
     async fn run(&mut self) -> Result<()> {
+        Server::builder()
+            .add_service(tonic_web::enable(self.server.clone()))
+            .serve(self.addr)
+            .await?;
         Ok(())
     }
 }
