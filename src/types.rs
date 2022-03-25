@@ -68,8 +68,8 @@ pub struct Poa {
 /// Transaction type
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Transaction {
-    pub format: usize,
-    pub id: String,
+    pub format: u32,
+    pub id: u32,
     pub last_tx: String,
     pub owner: String,
     pub tags: Vec<Tag>,
@@ -85,8 +85,8 @@ pub struct Transaction {
 /// Transaction type
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Tag {
-    name: String,
-    value: String,
+    pub name: String,
+    pub value: String,
 }
 
 /// abstract firehose block which simply combines
