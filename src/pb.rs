@@ -54,7 +54,7 @@ impl TryFrom<FirehoseBlock> for Block {
             diff: block.diff,
             height: block.height,
             hash: bd(&block.hash)?,
-            tx_root: block.tx_root.map(|r| bd(&r).ok()).flatten(),
+            tx_root: block.tx_root.and_then(|r| bd(&r).ok()),
             txs: block
                 .txs
                 .into_iter()
@@ -75,8 +75,8 @@ impl TryFrom<FirehoseBlock> for Block {
             //
             // handle this field which is not a member of arweave block
             hash_list: vec![],
-            hash_list_merkle: block.hash_list_merkle.map(|h| bd(&h).ok()).flatten(),
-            poa: block.poa.map(|p| p.try_into().ok()).flatten(),
+            hash_list_merkle: block.hash_list_merkle.and_then(|h| bd(&h).ok()),
+            poa: block.poa.and_then(|p| p.try_into().ok()),
         })
     }
 }
