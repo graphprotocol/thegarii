@@ -31,6 +31,8 @@ pub enum Error {
     #[error(transparent)]
     Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]
+    Status(#[from] tonic::Status),
+    #[error(transparent)]
     Var(#[from] VarError),
 }
 

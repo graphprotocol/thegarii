@@ -3,7 +3,7 @@
 
 //! start service
 use crate::{
-    service::{Checking, Polling, Service},
+    service::{Checking, Grpc, Polling, Service},
     Env, Result, Storage,
 };
 use futures::{future::join_all, join};
@@ -16,12 +16,13 @@ impl Start {
     /// start services
     pub async fn exec(&self, env: Env) -> Result<()> {
         let storage = Storage::new(&env.db_path)?;
-        let (polling, checking) = join!(
+        let (polling, checking, grpc) = join!(
             Polling::new(&env, storage.clone()),
-            Checking::new(&env, storage)
+            Checking::new(&env, storage.clone()),
+            Grpc::new(&env, storage)
         );
 
-        join_all(vec![polling?.start(), checking?.start()])
+        join_all(vec![polling?.start(), checking?.start(), grpc?.start()])
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?;

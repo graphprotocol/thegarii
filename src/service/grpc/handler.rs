@@ -1,5 +1,7 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
+#![allow(unused)]
+
 use crate::{
     pb::{stream_server::Stream, Request},
     service::grpc::types::BlocksStream,
@@ -32,6 +34,12 @@ impl Stream for StreamHandler {
         &self,
         request: tonic::Request<Request>,
     ) -> Result<tonic::Response<Self::BlocksStream>, Status> {
+        let req = request.into_inner();
+
+        // # TODO
+        //
+        // filter with `fork_steps`
+
         Err(Status::aborted(""))
     }
 }

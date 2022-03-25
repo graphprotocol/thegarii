@@ -9,6 +9,7 @@ mod backup;
 mod get;
 mod restore;
 mod start;
+mod stream;
 mod syncing;
 
 #[derive(StructOpt, Debug)]
@@ -21,6 +22,8 @@ pub enum Command {
     Restore(restore::Restore),
     /// Start thegarii service
     Start(start::Start),
+    /// Stream blocks from gRPC service
+    Stream(stream::Stream),
     /// Show the syncing status
     Syncing(syncing::Syncing),
 }
@@ -59,6 +62,7 @@ impl Opt {
             Command::Get(get) => get.exec(env).await?,
             Command::Restore(restore) => restore.exec(env).await?,
             Command::Start(start) => start.exec(env).await?,
+            Command::Stream(stream) => stream.exec(env).await?,
             Command::Syncing(syncing) => syncing.exec(env).await?,
         }
 
