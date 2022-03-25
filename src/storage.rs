@@ -21,17 +21,24 @@ impl Storage {
     /// new storage
     pub fn new(db_path: &dyn AsRef<Path>) -> Result<Self> {
         Ok(Self {
-            read: Arc::new(DB::open_for_read_only(&Default::default(), db_path, false)?),
             write: Some(Arc::new(Mutex::new(DB::open_default(db_path)?))),
+            read: Self::load_read_db(db_path),
         })
     }
 
     /// new read-only storage
     pub fn read_only(db_path: &dyn AsRef<Path>) -> Result<Self> {
         Ok(Self {
-            read: Arc::new(DB::open_for_read_only(&Default::default(), db_path, false)?),
+            read: Self::load_read_db(db_path),
             write: None,
         })
+    }
+
+    fn load_read_db(db_path: &dyn AsRef<Path>) -> Arc<DB> {
+        Arc::new(
+            DB::open_for_read_only(&Default::default(), db_path, false)
+                .expect("cannot load read only db, make sure db exists"),
+        )
     }
 
     //
