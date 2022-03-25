@@ -4,9 +4,10 @@ use crate::{Env, Result, Storage};
 use async_trait::async_trait;
 
 mod checking;
+pub mod grpc;
 mod polling;
 
-pub use self::{checking::Checking, polling::Polling};
+pub use self::{checking::Checking, grpc::Grpc, polling::Polling};
 
 #[async_trait]
 pub trait Service: Sized {

@@ -3,7 +3,7 @@
 
 //! App envorionments
 use crate::{Error, Result};
-use std::{env, fs, path::PathBuf};
+use std::{env, fs, net::SocketAddr, path::PathBuf};
 use structopt::StructOpt;
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
@@ -14,6 +14,8 @@ const DB_PATH: &str = "DB_PATH";
 const DEFAULT_DB_PATH: &str = "thegarii/thegarii.db";
 const ENDPOINTS: &str = "ENDPOINTS";
 const DEFAULT_ENDPOINTS: &str = "https://arweave.net";
+const GRPC_ADDR: &str = "GRPC_ADDR";
+const DEFAULT_GRPC_ADDR: &str = "[::1]:50051";
 const POLLING_BATCH_BLOCKS: &str = "POLLING_BATCH_BLOCKS";
 const DEFAULT_POLLING_BATCH_BLOCKS: u16 = 50;
 const RETRY: &str = "RETRY";
@@ -38,6 +40,9 @@ pub struct EnvArguments {
     /// client endpoints
     #[structopt(short, long)]
     pub endpoints: Vec<String>,
+    /// grpc address
+    #[structopt(short, long)]
+    pub grpc_addr: Option<String>,
     /// how many blocks polling at one time
     #[structopt(short = "B", long)]
     pub polling_batch_blocks: Option<u16>,
@@ -63,6 +68,8 @@ pub struct Env {
     pub db_path: PathBuf,
     /// client endpoints
     pub endpoints: Vec<String>,
+    /// grpc address
+    pub grpc_addr: SocketAddr,
     /// how many blocks polling at one time
     pub polling_batch_blocks: u16,
     /// safe blocks against to reorg in polling
@@ -113,6 +120,16 @@ impl Env {
         Ok(raw_endpoints.split(',').map(|e| e.to_string()).collect())
     }
 
+    /// get $GRPC_ADDR from env or use $DEFAULT_GRPC_ADDR
+    pub fn grpc_addr() -> Result<SocketAddr> {
+        let addr = match env::var(GRPC_ADDR) {
+            Ok(addr) => addr.parse()?,
+            Err(_) => DEFAULT_GRPC_ADDR.parse()?,
+        };
+
+        Ok(addr)
+    }
+
     /// get $POLLING_BATCH_BLOCKS from env or use $DEFAULT_POLLING_BATCH_BLOCKS
     pub fn polling_batch_blocks() -> Result<u16> {
         Ok(match env::var(POLLING_BATCH_BLOCKS) {
@@ -152,6 +169,7 @@ impl Env {
             checking_interval: Self::checking_interval()?,
             db_path: Self::db_path()?,
             endpoints: Self::endpoints()?,
+            grpc_addr: Self::grpc_addr()?,
             polling_batch_blocks: Self::polling_batch_blocks()?,
             retry: Self::retry()?,
             polling_safe_blocks: Self::polling_safe_blocks()?,
@@ -169,6 +187,11 @@ impl Env {
                 Self::endpoints()?
             } else {
                 args.endpoints
+            },
+            grpc_addr: if let Some(addr) = args.grpc_addr {
+                addr.parse()?
+            } else {
+                Self::grpc_addr()?
             },
             polling_batch_blocks: args
                 .polling_batch_blocks

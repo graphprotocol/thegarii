@@ -8,6 +8,7 @@ pub mod client;
 pub mod cmd;
 mod encoding;
 pub mod env;
+pub mod pb;
 pub mod result;
 pub mod service;
 mod storage;
