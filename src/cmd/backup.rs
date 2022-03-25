@@ -15,8 +15,9 @@ impl Backup {
     /// backup database to path
     pub async fn exec(&self, env: Env) -> Result<()> {
         let storage = Storage::new(&env.db_path)?;
+
         let mut engine = BackupEngine::open(&BackupEngineOptions::default(), &self.backup_path)?;
-        engine.create_new_backup_flush(&storage.read, true)?;
+        engine.create_new_backup(&storage.read)?;
 
         Ok(())
     }

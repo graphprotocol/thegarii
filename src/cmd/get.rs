@@ -12,6 +12,7 @@ pub struct Get {
 impl Get {
     pub async fn exec(&self, env: Env) -> Result<()> {
         let storage = Storage::new(&env.db_path)?;
+
         let block = if let Ok(block) = storage.get(self.height) {
             block
         } else {
@@ -20,7 +21,7 @@ impl Get {
             client.get_firehose_block_by_height(self.height).await?
         };
 
-        println!("{:#?}", block);
+        println!("{}", serde_json::to_string_pretty(&block)?);
         Ok(())
     }
 }

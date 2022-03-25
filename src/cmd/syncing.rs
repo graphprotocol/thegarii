@@ -17,7 +17,7 @@ impl Syncing {
     /// start services
     pub async fn exec(&self, env: Env) -> Result<()> {
         let client = Client::from_env()?;
-        let storage = Storage::new(&env.db_path)?;
+        let storage = Storage::read_only(&env.db_path)?;
 
         println!(
             "{:#?}",
