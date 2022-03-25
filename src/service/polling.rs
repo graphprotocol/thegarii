@@ -25,13 +25,11 @@ impl Polling {
             let end = (self.ptr + self.batch as u64).min((self.current - self.safe).max(0));
             log::info!("fetching blocks {}..{}/{}...", self.ptr, end, self.current);
 
-            self.storage
-                .write(
-                    self.client
-                        .poll(self.storage.missing(self.ptr..end).into_iter())
-                        .await?,
-                )
+            let blocks = self
+                .client
+                .poll(self.storage.missing(self.ptr..end).into_iter())
                 .await?;
+            self.storage.write(blocks).await?;
 
             self.ptr = end;
             if self.ptr + self.batch as u64 > self.current {

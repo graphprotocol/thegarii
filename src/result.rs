@@ -24,6 +24,8 @@ pub enum Error {
     Bincode(#[from] bincode::Error),
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
+    #[error("can not write data in read-only mode")]
+    ReadOnlyDatabase,
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
@@ -32,6 +34,7 @@ pub enum Error {
     Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]
     Status(#[from] tonic::Status),
+    SerdeJson(#[from] serde_json::Error),
     #[error(transparent)]
     Var(#[from] VarError),
 }

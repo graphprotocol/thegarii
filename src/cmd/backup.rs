@@ -22,9 +22,9 @@ impl Backup {
             env.with_db_path(db_path.into());
         }
 
-        let storage = Storage::new(&env.db_path)?;
+        let storage = Storage::read_only(&env.db_path)?;
         let mut engine = BackupEngine::open(&BackupEngineOptions::default(), &self.backup_path)?;
-        engine.create_new_backup_flush(&storage.read, true)?;
+        engine.create_new_backup(&storage.read)?;
 
         Ok(())
     }
