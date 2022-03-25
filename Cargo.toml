@@ -14,7 +14,7 @@ path = "bin/thegarii.rs"
 
 [dependencies]
 async-trait = "0.1.52"
-base64-url = "1.4.10"
+base64-url = "1.4.13"
 bincode = "1.3.3"
 dirs = "4.0.0"
 env_logger = "0.9.0"
