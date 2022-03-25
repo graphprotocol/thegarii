@@ -10,16 +10,17 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 pub struct Stream {
     /// Controls where the stream of blocks will start.
-    #[structopt(long, default_value = "0")]
+    #[structopt(short = "s", long, default_value = "0")]
     pub start_block_num: i64,
     /// Controls where the stream of blocks will start which will be immediately after
     /// the Block pointed by this opaque cursor.
-    #[structopt(long, default_value = "")]
+    #[structopt(short = "c", long, default_value = "")]
     pub start_crusor: String,
     // When non-zero, controls where the stream of blocks will stop.
-    #[structopt(long, default_value = "0")]
+    #[structopt(short = "e", long, default_value = "0")]
     pub stop_block_number: u64,
     /// "confirms:20"
+    #[structopt(short, long, default_value = "confirms:20")]
     pub irreversibility_condition: String,
 }
 

@@ -33,8 +33,9 @@ pub enum Error {
     #[error(transparent)]
     Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]
-    Status(#[from] tonic::Status),
     SerdeJson(#[from] serde_json::Error),
+    #[error(transparent)]
+    Status(#[from] tonic::Status),
     #[error(transparent)]
     Var(#[from] VarError),
 }
