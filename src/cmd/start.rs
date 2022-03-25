@@ -3,10 +3,11 @@
 
 //! start service
 use crate::{
-    service::{Checking, Grpc, Polling, Service},
+    service::{Grpc, Polling, Service, Shared},
     Env, Result, Storage,
 };
-use futures::{future::join_all, join};
+use futures::{future::join_all, join, lock::Mutex};
+use std::sync::Arc;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -16,13 +17,15 @@ impl Start {
     /// start services
     pub async fn exec(&self, env: Env) -> Result<()> {
         let storage = Storage::new(&env.db_path)?;
-        let (polling, checking, grpc) = join!(
-            Polling::new(&env, storage.clone()),
-            Checking::new(&env, storage.clone()),
-            Grpc::new(&env, storage)
-        );
+        let shared = Shared {
+            env: Arc::new(env),
+            latest: Arc::new(Mutex::new(0)),
+            storage,
+        };
 
-        join_all(vec![polling?.start(), checking?.start(), grpc?.start()])
+        let (polling, grpc) = join!(Polling::new(shared.clone()), Grpc::new(shared));
+
+        join_all(vec![polling?.start(), grpc?.start()])
             .await
             .into_iter()
             .collect::<Result<Vec<_>>>()?;

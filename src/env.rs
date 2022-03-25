@@ -58,7 +58,7 @@ pub struct EnvArguments {
 }
 
 /// environments
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Env {
     /// time cost for producing a new block in arweave
     pub block_time: u64,
