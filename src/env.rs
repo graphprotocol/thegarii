@@ -16,12 +16,12 @@ const ENDPOINTS: &str = "ENDPOINTS";
 const DEFAULT_ENDPOINTS: &str = "https://arweave.net";
 const GRPC_ADDR: &str = "GRPC_ADDR";
 const DEFAULT_GRPC_ADDR: &str = "[::1]:50051";
-const POLLING_BATCH_BLOCKS: &str = "POLLING_BATCH_BLOCKS";
-const DEFAULT_POLLING_BATCH_BLOCKS: u16 = 50;
+const BATCH_BLOCKS: &str = "BATCH_BLOCKS";
+const DEFAULT_BATCH_BLOCKS: u16 = 50;
 const RETRY: &str = "RETRY";
 const DEFAULT_RETRY: u8 = 10;
-const POLLING_SAFE_BLOCKS: &str = "POLLING_SAFE_BLOCKS";
-const DEFAULT_POLLING_SAFE_BLOCKS: u64 = 20;
+const CONFIRMS: &str = "CONFIRMS";
+const DEFAULT_CONFIRMS: u64 = 20;
 const TIMEOUT: &str = "TIMEOUT";
 const DEFAULT_TIMEOUT: u64 = 120_000;
 
@@ -45,10 +45,10 @@ pub struct EnvArguments {
     pub grpc_addr: Option<String>,
     /// how many blocks polling at one time
     #[structopt(short = "B", long)]
-    pub polling_batch_blocks: Option<u16>,
+    pub batch_blocks: Option<u16>,
     /// safe blocks against to reorg in polling
     #[structopt(short, long)]
-    pub polling_safe_blocks: Option<u64>,
+    pub confirms: Option<u64>,
     /// timeout of http requests
     #[structopt(short, long)]
     pub timeout: Option<u64>,
@@ -71,9 +71,9 @@ pub struct Env {
     /// grpc address
     pub grpc_addr: SocketAddr,
     /// how many blocks polling at one time
-    pub polling_batch_blocks: u16,
+    pub batch_blocks: u16,
     /// safe blocks against to reorg in polling
-    pub polling_safe_blocks: u64,
+    pub confirms: u64,
     /// timeout of http requests
     pub timeout: u64,
     /// retry times when failed on http requests
@@ -130,11 +130,11 @@ impl Env {
         Ok(addr)
     }
 
-    /// get $POLLING_BATCH_BLOCKS from env or use $DEFAULT_POLLING_BATCH_BLOCKS
-    pub fn polling_batch_blocks() -> Result<u16> {
-        Ok(match env::var(POLLING_BATCH_BLOCKS) {
+    /// get $BATCH_BLOCKS from env or use $DEFAULT_BATCH_BLOCKS
+    pub fn batch_blocks() -> Result<u16> {
+        Ok(match env::var(BATCH_BLOCKS) {
             Ok(blocks) => blocks.parse()?,
-            Err(_) => DEFAULT_POLLING_BATCH_BLOCKS,
+            Err(_) => DEFAULT_BATCH_BLOCKS,
         })
     }
 
@@ -146,11 +146,11 @@ impl Env {
         })
     }
 
-    /// get $POLLING_SAFE_BLOCKS from env or use $DEFAULT_POLLING_SAFE_BLOCKS
-    pub fn polling_safe_blocks() -> Result<u64> {
-        Ok(match env::var(POLLING_SAFE_BLOCKS) {
+    /// get $CONFIRMS from env or use $DEFAULT_CONFIRMS
+    pub fn confirms() -> Result<u64> {
+        Ok(match env::var(CONFIRMS) {
             Ok(interval) => interval.parse()?,
-            Err(_) => DEFAULT_POLLING_SAFE_BLOCKS,
+            Err(_) => DEFAULT_CONFIRMS,
         })
     }
 
@@ -170,9 +170,9 @@ impl Env {
             db_path: Self::db_path()?,
             endpoints: Self::endpoints()?,
             grpc_addr: Self::grpc_addr()?,
-            polling_batch_blocks: Self::polling_batch_blocks()?,
+            batch_blocks: Self::batch_blocks()?,
             retry: Self::retry()?,
-            polling_safe_blocks: Self::polling_safe_blocks()?,
+            confirms: Self::confirms()?,
             timeout: Self::timeout()?,
         })
     }
@@ -193,13 +193,9 @@ impl Env {
             } else {
                 Self::grpc_addr()?
             },
-            polling_batch_blocks: args
-                .polling_batch_blocks
-                .unwrap_or(Self::polling_batch_blocks()?),
+            batch_blocks: args.batch_blocks.unwrap_or(Self::batch_blocks()?),
             retry: args.retry.unwrap_or(Self::retry()?),
-            polling_safe_blocks: args
-                .polling_safe_blocks
-                .unwrap_or(Self::polling_safe_blocks()?),
+            confirms: args.confirms.unwrap_or(Self::confirms()?),
             timeout: args.timeout.unwrap_or(Self::timeout()?),
         })
     }
@@ -229,14 +225,14 @@ impl Env {
     }
 
     /// set polling batch blocks
-    pub fn with_polling_batch_blocks(&mut self, polling_batch_blocks: u16) -> &mut Self {
-        self.polling_batch_blocks = polling_batch_blocks;
+    pub fn with_batch_blocks(&mut self, batch_blocks: u16) -> &mut Self {
+        self.batch_blocks = batch_blocks;
         self
     }
 
     /// set polling safe blocks
-    pub fn with_polling_safe_blocks(&mut self, polling_safe_blocks: u64) -> &mut Self {
-        self.polling_safe_blocks = polling_safe_blocks;
+    pub fn with_confirms(&mut self, confirms: u64) -> &mut Self {
+        self.confirms = confirms;
         self
     }
 

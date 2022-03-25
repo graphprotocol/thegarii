@@ -78,8 +78,8 @@ impl Poll {
         let now = Instant::now();
         while !blocks.is_empty() {
             let mut _blocks = blocks.clone();
-            if blocks.len() > env.polling_batch_blocks as usize {
-                blocks = _blocks.split_off(env.polling_batch_blocks as usize);
+            if blocks.len() > env.batch_blocks as usize {
+                blocks = _blocks.split_off(env.batch_blocks as usize);
             } else {
                 blocks.drain(..);
             }

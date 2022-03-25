@@ -15,14 +15,14 @@ pub struct Polling {
     current: u64,
     ptr: u64,
     storage: Storage,
-    safe: u64,
+    confirms: u64,
 }
 
 impl Polling {
     /// trigger polling blocks
     async fn polling(&mut self) -> Result<()> {
         loop {
-            let end = (self.ptr + self.batch as u64).min((self.current - self.safe).max(0));
+            let end = (self.ptr + self.batch as u64).min((self.current - self.confirms).max(0));
             log::info!("fetching blocks {}..{}/{}...", self.ptr, end, self.current);
 
             let blocks = self
@@ -33,7 +33,7 @@ impl Polling {
 
             self.ptr = end;
             if self.ptr + self.batch as u64 > self.current {
-                tokio::time::sleep(Duration::from_millis(self.safe * self.block_time)).await;
+                tokio::time::sleep(Duration::from_millis(self.confirms * self.block_time)).await;
                 self.current = self.client.get_current_block().await?.height;
             }
         }
@@ -59,12 +59,12 @@ impl Service for Polling {
         let current = client.get_current_block().await?.height;
 
         Ok(Self {
-            batch: env.polling_batch_blocks,
+            batch: env.batch_blocks,
             block_time: env.block_time,
             client,
             current,
             ptr,
-            safe: env.polling_safe_blocks,
+            confirms: env.confirms,
             storage,
         })
     }

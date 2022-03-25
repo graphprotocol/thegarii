@@ -87,7 +87,7 @@ impl Service for Checking {
         )?;
 
         Ok(Self {
-            batch: env.polling_batch_blocks,
+            batch: env.batch_blocks,
             client,
             storage,
             interval: env.checking_interval,
