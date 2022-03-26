@@ -76,9 +76,9 @@ message ProofOfAccess {
 
 message Transaction {
   // 1 or 2 for v1 or v2 transactions. More allowable in the future
-  uint32 format = 1;	 
+  uint32 format = 1;
   // The transaction identifier.
-  uint32 id = 2; 	 
+  string id = 2; 	 
   // Either the identifier of the previous transaction from the same
   // wallet or the identifier of one of the last ?MAX_TX_ANCHOR_DEPTH blocks.
   bytes last_tx = 3;   

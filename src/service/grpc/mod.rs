@@ -27,7 +27,7 @@ impl Service for Grpc {
     const NAME: &'static str = "grpc";
 
     /// new gRPC service
-    async fn new(shared: Shared) -> Result<Self> {
+    fn new(shared: Shared) -> Result<Self> {
         let client = Client::new(
             shared.env.endpoints.clone(),
             Duration::from_millis(shared.env.timeout),

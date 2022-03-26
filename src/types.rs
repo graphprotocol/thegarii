@@ -69,7 +69,7 @@ pub struct Poa {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Transaction {
     pub format: u32,
-    pub id: u32,
+    pub id: String,
     pub last_tx: String,
     pub owner: String,
     pub tags: Vec<Tag>,

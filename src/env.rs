@@ -7,9 +7,7 @@ use std::{env, fs, net::SocketAddr, path::PathBuf};
 use structopt::StructOpt;
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
-const DEFAULT_BLOCK_TIME: u64 = 10_000;
-const CHECKING_INTERVAL: &str = "CHECKING_INTERVAL";
-const DEFAULT_CHECKING_INTERVAL: u64 = 3_000;
+const DEFAULT_BLOCK_TIME: u64 = 20_000;
 const DB_PATH: &str = "DB_PATH";
 const DEFAULT_DB_PATH: &str = "thegarii/thegarii.db";
 const ENDPOINTS: &str = "ENDPOINTS";
@@ -31,9 +29,6 @@ pub struct EnvArguments {
     /// time cost for producing a new block in arweave
     #[structopt(short, long)]
     pub block_time: Option<u64>,
-    /// inverval for checking missing blocks
-    #[structopt(short, long)]
-    pub checking_interval: Option<u64>,
     /// storage db path
     #[structopt(short = "D", long)]
     pub db_path: Option<PathBuf>,
@@ -62,8 +57,6 @@ pub struct EnvArguments {
 pub struct Env {
     /// time cost for producing a new block in arweave
     pub block_time: u64,
-    /// inverval for checking missed blocks
-    pub checking_interval: u64,
     /// storage db path
     pub db_path: PathBuf,
     /// client endpoints
@@ -86,14 +79,6 @@ impl Env {
         Ok(match env::var(BLOCK_TIME) {
             Ok(time) => time.parse()?,
             Err(_) => DEFAULT_BLOCK_TIME,
-        })
-    }
-
-    /// get $CHECKING_INTERVAL from env or use $DEFAULT_CHECKING_INTERVAL
-    pub fn checking_interval() -> Result<u64> {
-        Ok(match env::var(CHECKING_INTERVAL) {
-            Ok(interval) => interval.parse()?,
-            Err(_) => DEFAULT_CHECKING_INTERVAL,
         })
     }
 
@@ -166,7 +151,6 @@ impl Env {
     pub fn new() -> Result<Self> {
         Ok(Self {
             block_time: Self::block_time()?,
-            checking_interval: Self::checking_interval()?,
             db_path: Self::db_path()?,
             endpoints: Self::endpoints()?,
             grpc_addr: Self::grpc_addr()?,
@@ -181,7 +165,6 @@ impl Env {
     pub fn from_args(args: EnvArguments) -> Result<Self> {
         Ok(Self {
             block_time: args.block_time.unwrap_or(Self::block_time()?),
-            checking_interval: args.checking_interval.unwrap_or(Self::checking_interval()?),
             db_path: args.db_path.unwrap_or(Self::db_path()?),
             endpoints: if args.endpoints.is_empty() {
                 Self::endpoints()?
@@ -203,12 +186,6 @@ impl Env {
     /// set block time
     pub fn with_block_time(&mut self, block_time: u64) -> &mut Self {
         self.block_time = block_time;
-        self
-    }
-
-    /// set checking interval
-    pub fn with_checking_interval(&mut self, checking_interval: u64) -> &mut Self {
-        self.checking_interval = checking_interval;
         self
     }
 
