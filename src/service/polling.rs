@@ -26,7 +26,7 @@ impl Polling {
     /// we can use this `latest` directly since it has already
     /// minus `confirms` in the tracking service
     async fn get_latest(&self) -> u64 {
-        self.latest.lock().await.clone()
+        *self.latest.lock().await
     }
 
     /// returns the missing blocks
@@ -34,6 +34,8 @@ impl Polling {
         let last = self.storage.last().map(|b| b.height).unwrap_or(0);
         let count = self.storage.count()?;
 
+        // the `count % 256` below comes from the
+        // data order of rocksdb
         if count == 0 {
             return Ok(0);
         } else if count % 256 + last + 1 == count {
@@ -44,12 +46,12 @@ impl Polling {
         log::warn!("block storage is not continuous, checking missing blocks...",);
         let mut blocks = self.storage.map_keys(|k, _| {
             let mut b = [0; 8];
-            b.copy_from_slice(&k);
+            b.copy_from_slice(k);
 
             u64::from_le_bytes(b)
         });
 
-        blocks.sort();
+        blocks.sort_unstable();
 
         Ok(blocks
             .into_iter()

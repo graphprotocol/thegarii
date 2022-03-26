@@ -6,14 +6,15 @@
 use crate::{
     pb::stream_server::StreamServer,
     service::{Service, Shared},
-    Client, Result,
+    Result,
 };
 use async_trait::async_trait;
 use handler::StreamHandler;
-use std::{net::SocketAddr, time::Duration};
+use std::net::SocketAddr;
 use tonic::transport::Server;
 
 pub mod handler;
+pub mod result;
 pub mod types;
 
 /// gRPC service
@@ -28,15 +29,14 @@ impl Service for Grpc {
 
     /// new gRPC service
     fn new(shared: Shared) -> Result<Self> {
-        let client = Client::new(
-            shared.env.endpoints.clone(),
-            Duration::from_millis(shared.env.timeout),
-            shared.env.retry,
-        )?;
-
         Ok(Self {
             addr: shared.env.grpc_addr,
-            server: StreamServer::new(StreamHandler::new(client, shared.storage)),
+            server: StreamServer::new(StreamHandler {
+                confirms: shared.env.confirms,
+                client: shared.client,
+                latest: shared.latest,
+                storage: shared.storage,
+            }),
         })
     }
 
