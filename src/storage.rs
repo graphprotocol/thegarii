@@ -54,10 +54,7 @@ impl Storage {
     }
 
     /// get missing block numbers
-    pub fn missing<Blocks>(&self, keys: Blocks) -> Vec<u64>
-    where
-        Blocks: Iterator<Item = u64> + Sized,
-    {
+    pub fn missing(&self, keys: impl IntoIterator<Item = u64>) -> Vec<u64> {
         keys.into_iter()
             .filter(|key| self.get(*key).is_err())
             .collect()
@@ -75,7 +72,7 @@ impl Storage {
 
     /// get the last block
     pub fn last(&self) -> Result<FirehoseBlock> {
-        let (_, value) = self
+        let (key, value) = self
             .read
             .iterator(IteratorMode::End)
             .next()

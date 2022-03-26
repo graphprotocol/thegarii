@@ -21,14 +21,11 @@ pub struct Tracking {
 impl Tracking {
     async fn track(&self) -> Result<()> {
         let head = self.client.get_current_block().await?;
-        if head.height < self.confirms {
-            return Ok(());
-        }
 
         // reset the latest block number
-        let latest = head.height - self.confirms;
+        let latest = head.height.max(self.confirms) - self.confirms;
         *self.latest.lock().await = latest;
-        log::info!("updated latest block ptr: {}", latest);
+        log::info!("update latest block height: {}", latest);
         Ok(())
     }
 }

@@ -8,7 +8,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use futures::lock::Mutex;
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 /// checking service
 pub struct Polling {
@@ -26,30 +26,45 @@ impl Polling {
     /// we can use this `latest` directly since it has already
     /// minus `confirms` in the tracking service
     async fn get_latest(&self) -> u64 {
-        println!("latest");
         self.latest.lock().await.clone()
     }
 
-    // /// returns the missing blocks
-    // pub async fn check(&self) -> Result<Vec<u64>> {
-    //     let latest = self.get_latest().await;
-    //     println!("got");
-    //
-    //     let in_db = self.storage.map_keys(|key, _| {
-    //         let mut height = [0; 8];
-    //         height.copy_from_slice(key);
-    //         u64::from_le_bytes(height)
-    //     });
-    //
-    //     Ok((0..latest).filter(|h| !in_db.contains(h)).collect())
-    // }
+    /// returns the missing blocks
+    pub async fn check(&self) -> Result<u64> {
+        let last = self.storage.last().map(|b| b.height).unwrap_or(0);
+        let count = self.storage.count()?;
+
+        if count == 0 {
+            return Ok(0);
+        } else if count % 256 + last + 1 == count {
+            return Ok(count);
+        }
+
+        // if storage is not continuous
+        log::warn!("block storage is not continuous, checking missing blocks...",);
+        let mut blocks = self.storage.map_keys(|k, _| {
+            let mut b = [0; 8];
+            b.copy_from_slice(&k);
+
+            u64::from_le_bytes(b)
+        });
+
+        blocks.sort();
+
+        Ok(blocks
+            .into_iter()
+            .enumerate()
+            .filter(|(idx, height)| (*idx as u64) != *height)
+            .min()
+            .map(|(_, v)| v)
+            .unwrap_or(count))
+    }
 
     /// check missed blocks and re-poll
     pub async fn poll(&self) -> Result<()> {
-        // let mut blocks = self.check().await?;
-        let mut blocks = (0..self.get_latest().await).collect::<Vec<u64>>();
+        let ptr = self.check().await?;
+        let mut blocks = (ptr..=self.get_latest().await).collect::<Vec<u64>>();
 
-        println!("got {}", blocks.len());
         if blocks.is_empty() {
             return Ok(());
         }

@@ -23,7 +23,7 @@ impl Start {
             env.retry,
         )?;
 
-        let latest = client.get_current_block().await?.height;
+        let latest = client.get_current_block().await?.height.max(env.confirms) - env.confirms;
         let storage = Storage::new(&env.db_path)?;
         let shared = Shared {
             client: Arc::new(client),
