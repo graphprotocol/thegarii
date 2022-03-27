@@ -35,8 +35,8 @@ message Block {
   // all wallet (account) balances and the identifiers
   // of the last transactions posted by them; if any.
   bytes wallet_list = 12;
-  // Address of the account to receive the block rewards. Can also be unclaimed which is encoded as a null byte
-  bytes reward_addr = 13;
+  // (string or) Address of the account to receive the block rewards. Can also be unclaimed which is encoded as a null byte
+  string reward_addr = 13;
   // Tags that a block producer can add to a block
   repeated Tag tags = 14;
   // Size of reward pool

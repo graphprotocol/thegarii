@@ -47,7 +47,10 @@ impl StreamHandler {
         };
 
         Ok(Response {
-            block: block.try_into().ok(),
+            block: Some(block.try_into().map_err(|e| {
+                log::error!("{:?}", e);
+                Error::BlockNotFound
+            })?),
             step: step as i32,
             cursor: num.to_string(),
         })

@@ -4,6 +4,7 @@ use crate::{
     pb::{stream_client::StreamClient, Request},
     Env, Result,
 };
+use futures::StreamExt;
 use structopt::StructOpt;
 
 /// stream blocks from firehose service
@@ -27,8 +28,8 @@ pub struct Stream {
 impl Stream {
     pub async fn exec(&self, env: Env) -> Result<()> {
         let addr = format!("http://{}:{}", env.grpc_addr.ip(), env.grpc_addr.port());
-        log::info!("connecting {:?}", addr);
-        let mut client = StreamClient::connect(addr).await?;
+        let mut client = StreamClient::connect(addr.clone()).await?;
+        log::info!("connected {:?}", addr);
 
         // construct request
         let req = tonic::Request::new(Request {
@@ -42,9 +43,18 @@ impl Stream {
             transforms: vec![],
         });
 
+        // fetch metadata
+        log::info!("fetching metadata...");
         let res = client.blocks(req).await?;
+        log::info!("got response {:?}", res);
+
         let mut streaming = res.into_inner();
-        log::info!("{:#?}", streaming.message().await.unwrap().unwrap());
+        log::info!("message {:?}", streaming.message().await);
+
+        while let Some(stream) = streaming.next().await {
+            log::info!("message {:?}", stream);
+        }
+
         Ok(())
     }
 }

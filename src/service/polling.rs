@@ -34,7 +34,7 @@ impl Polling {
         let count = self.storage.count()?;
 
         // if storage is not continuous
-        log::warn!("checking continuous...",);
+        log::info!("checking continuous...");
         let mut blocks = self.storage.map_keys(|k, _| {
             let mut b = [0; 8];
             b.copy_from_slice(k);
@@ -71,14 +71,17 @@ impl Polling {
                 blocks.drain(..);
             }
 
+            polling = self.storage.missing(polling.into_iter());
+            if polling.is_empty() {
+                continue;
+            }
+
             log::info!(
                 "polling blocks {}..{}/{}...",
                 polling.first().unwrap_or(&0),
                 polling.last().unwrap_or(&0),
                 latest
             );
-
-            polling = self.storage.missing(polling.into_iter());
             let blocks = self.client.poll(polling.into_iter()).await?;
             self.storage.write(blocks).await?;
         }

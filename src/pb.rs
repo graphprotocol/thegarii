@@ -59,9 +59,9 @@ impl TryFrom<FirehoseBlock> for Block {
                 .txs
                 .into_iter()
                 .map(TryInto::try_into)
-                .collect::<Result<Vec<_>>>()?,
+                .collect::<Result<Vec<_>>>(),
             wallet_list: bd(&block.wallet_list)?,
-            reward_addr: bd(&block.reward_addr)?,
+            reward_addr: block.reward_addr,
             tags: block
                 .tags
                 .into_iter()
