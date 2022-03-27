@@ -31,19 +31,10 @@ impl Polling {
 
     /// returns the missing blocks
     pub async fn check(&self) -> Result<u64> {
-        let last = self.storage.last().map(|b| b.height).unwrap_or(0);
         let count = self.storage.count()?;
 
-        // the `count % 256` below comes from the
-        // data order of rocksdb
-        if count == 0 {
-            return Ok(0);
-        } else if count % 256 + last + 1 == count {
-            return Ok(count);
-        }
-
         // if storage is not continuous
-        log::warn!("block storage is not continuous, checking missing blocks...",);
+        log::warn!("checking continuous...",);
         let mut blocks = self.storage.map_keys(|k, _| {
             let mut b = [0; 8];
             b.copy_from_slice(k);

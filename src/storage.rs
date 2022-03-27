@@ -78,6 +78,10 @@ impl Storage {
             .next()
             .ok_or(Error::NoBlockExists)?;
 
+        let mut buf = [0; 8];
+        buf.copy_from_slice(&key);
+        log::info!("last stroage block nuber: {:?}", u64::from_le_bytes(buf));
+
         Ok(bincode::deserialize(&value)?)
     }
 
