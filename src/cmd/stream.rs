@@ -26,12 +26,9 @@ pub struct Stream {
 
 impl Stream {
     pub async fn exec(&self, env: Env) -> Result<()> {
-        let mut client = StreamClient::connect(format!(
-            "http://{}{}",
-            env.grpc_addr.ip(),
-            env.grpc_addr.port()
-        ))
-        .await?;
+        let addr = format!("http://{}:{}", env.grpc_addr.ip(), env.grpc_addr.port());
+        log::info!("connecting {:?}", addr);
+        let mut client = StreamClient::connect(addr).await?;
 
         // construct request
         let req = tonic::Request::new(Request {
@@ -46,7 +43,8 @@ impl Stream {
         });
 
         let res = client.blocks(req).await?;
-        log::info!("{:?}", res);
+        let mut streaming = res.into_inner();
+        log::info!("{:#?}", streaming.message().await.unwrap().unwrap());
         Ok(())
     }
 }

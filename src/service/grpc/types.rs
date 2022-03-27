@@ -8,6 +8,7 @@ use crate::service::grpc::result::Result;
 /// # NOTE
 ///
 /// use `Vec` since it's lighter than VecDedeup
+#[derive(Debug)]
 pub struct BlocksStream(pub Vec<Result<Response>>);
 
 impl From<Vec<Result<Response>>> for BlocksStream {
