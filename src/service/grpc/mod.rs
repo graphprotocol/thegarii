@@ -3,7 +3,11 @@
 
 //! gRPC service
 
-use crate::{pb::stream_server::StreamServer, service::Service, Client, Env, Result, Storage};
+use crate::{
+    pb::stream_server::StreamServer,
+    service::{Service, Shared},
+    Client, Result,
+};
 use async_trait::async_trait;
 use handler::StreamHandler;
 use std::{net::SocketAddr, time::Duration};
@@ -23,16 +27,16 @@ impl Service for Grpc {
     const NAME: &'static str = "grpc";
 
     /// new gRPC service
-    async fn new(env: &Env, storage: Storage) -> Result<Self> {
+    fn new(shared: Shared) -> Result<Self> {
         let client = Client::new(
-            env.endpoints.clone(),
-            Duration::from_millis(env.timeout),
-            env.retry,
+            shared.env.endpoints.clone(),
+            Duration::from_millis(shared.env.timeout),
+            shared.env.retry,
         )?;
 
         Ok(Self {
-            addr: env.grpc_addr,
-            server: StreamServer::new(StreamHandler::new(client, storage)),
+            addr: shared.env.grpc_addr,
+            server: StreamServer::new(StreamHandler::new(client, shared.storage)),
         })
     }
 

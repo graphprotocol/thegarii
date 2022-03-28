@@ -1,42 +1,96 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
+//! checking service
 
-//! polling service
-
-use crate::{service::Service, Client, Env, Result, Storage};
+use crate::{
+    service::{Service, Shared},
+    Client, Result, Storage,
+};
 use async_trait::async_trait;
-use std::time::Duration;
+use futures::lock::Mutex;
+use std::sync::Arc;
 
-/// polling service
+/// checking service
 pub struct Polling {
     batch: u16,
-    block_time: u64,
-    client: Client,
-    current: u64,
-    ptr: u64,
+    client: Arc<Client>,
+    latest: Arc<Mutex<u64>>,
     storage: Storage,
-    safe: u64,
 }
 
 impl Polling {
-    /// trigger polling blocks
-    async fn polling(&mut self) -> Result<()> {
-        loop {
-            let end = (self.ptr + self.batch as u64).min((self.current - self.safe).max(0));
-            log::info!("fetching blocks {}..{}/{}...", self.ptr, end, self.current);
+    /// get latest block from threads
+    ///
+    /// # NOTE
+    ///
+    /// we can use this `latest` directly since it has already
+    /// minus `confirms` in the tracking service
+    async fn get_latest(&self) -> u64 {
+        *self.latest.lock().await
+    }
 
-            let blocks = self
-                .client
-                .poll(self.storage.missing(self.ptr..end).into_iter())
-                .await?;
-            self.storage.write(blocks).await?;
+    /// returns the missing blocks
+    pub async fn check(&self) -> Result<u64> {
+        let last = self.storage.last().map(|b| b.height).unwrap_or(0);
+        let count = self.storage.count()?;
 
-            self.ptr = end;
-            if self.ptr + self.batch as u64 > self.current {
-                tokio::time::sleep(Duration::from_millis(self.safe * self.block_time)).await;
-                self.current = self.client.get_current_block().await?.height;
-            }
+        if count == 0 {
+            return Ok(0);
+        } else if count % 256 + last + 1 == count {
+            return Ok(count);
         }
+
+        // if storage is not continuous
+        log::warn!("block storage is not continuous, checking missing blocks...",);
+        let mut blocks = self.storage.map_keys(|k, _| {
+            let mut b = [0; 8];
+            b.copy_from_slice(k);
+
+            u64::from_le_bytes(b)
+        });
+
+        blocks.sort_unstable();
+
+        Ok(blocks
+            .into_iter()
+            .enumerate()
+            .filter(|(idx, height)| (*idx as u64) != *height)
+            .min()
+            .map(|(_, v)| v)
+            .unwrap_or(count))
+    }
+
+    /// check missed blocks and re-poll
+    pub async fn poll(&self) -> Result<()> {
+        let ptr = self.check().await?;
+        let mut blocks = (ptr..=self.get_latest().await).collect::<Vec<u64>>();
+
+        if blocks.is_empty() {
+            return Ok(());
+        }
+
+        while !blocks.is_empty() {
+            let latest = self.get_latest().await;
+            let mut polling = blocks.clone();
+            if polling.len() > self.batch as usize {
+                blocks = polling.split_off(self.batch as usize);
+            } else {
+                blocks.drain(..);
+            }
+
+            log::info!(
+                "polling blocks {}..{}/{}...",
+                polling.first().unwrap_or(&0),
+                polling.last().unwrap_or(&0),
+                latest
+            );
+
+            polling = self.storage.missing(polling.into_iter());
+            let blocks = self.client.poll(polling.into_iter()).await?;
+            self.storage.write(blocks).await?;
+        }
+
+        Ok(())
     }
 }
 
@@ -44,33 +98,20 @@ impl Polling {
 impl Service for Polling {
     const NAME: &'static str = "polling";
 
-    /// new polling service
-    async fn new(env: &Env, storage: Storage) -> Result<Self> {
-        let client = Client::new(
-            env.endpoints.clone(),
-            Duration::from_millis(env.timeout),
-            env.retry,
-        )?;
-        let ptr = if let Ok(last) = storage.last() {
-            last.height
-        } else {
-            0
-        };
-        let current = client.get_current_block().await?.height;
-
+    /// new checking service
+    fn new(shared: Shared) -> Result<Self> {
         Ok(Self {
-            batch: env.polling_batch_blocks,
-            block_time: env.block_time,
-            client,
-            current,
-            ptr,
-            safe: env.polling_safe_blocks,
-            storage,
+            batch: shared.env.batch_blocks,
+            client: shared.client,
+            latest: shared.latest,
+            storage: shared.storage,
         })
     }
 
     /// run polling service
     async fn run(&mut self) -> Result<()> {
-        return self.polling().await;
+        loop {
+            self.poll().await?
+        }
     }
 }
