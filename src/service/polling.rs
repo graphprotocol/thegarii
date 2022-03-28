@@ -53,7 +53,7 @@ impl Polling {
             .unwrap_or(count))
     }
 
-    /// check missed blocks and re-poll
+    /// check missing blocks and re-poll
     pub async fn poll(&self) -> Result<()> {
         let ptr = self.check().await?;
         let mut blocks = (ptr..=self.get_latest().await).collect::<Vec<u64>>();
@@ -82,6 +82,7 @@ impl Polling {
                 polling.last().unwrap_or(&0),
                 latest
             );
+
             let blocks = self.client.poll(polling.into_iter()).await?;
             self.storage.write(blocks).await?;
         }
