@@ -11,7 +11,7 @@ pub struct Get {
 
 impl Get {
     pub async fn exec(&self, env: Env) -> Result<()> {
-        let storage = Storage::new(&env.db_path)?;
+        let storage = Storage::read_only(&env.db_path)?;
 
         let block = if let Ok(block) = storage.get(self.height) {
             block

@@ -31,17 +31,10 @@ impl Polling {
 
     /// returns the missing blocks
     pub async fn check(&self) -> Result<u64> {
-        let last = self.storage.last().map(|b| b.height).unwrap_or(0);
         let count = self.storage.count()?;
 
-        if count == 0 {
-            return Ok(0);
-        } else if count % 256 + last + 1 == count {
-            return Ok(count);
-        }
-
         // if storage is not continuous
-        log::warn!("block storage is not continuous, checking missing blocks...",);
+        log::info!("checking continuous...");
         let mut blocks = self.storage.map_keys(|k, _| {
             let mut b = [0; 8];
             b.copy_from_slice(k);
@@ -60,7 +53,7 @@ impl Polling {
             .unwrap_or(count))
     }
 
-    /// check missed blocks and re-poll
+    /// check missing blocks and re-poll
     pub async fn poll(&self) -> Result<()> {
         let ptr = self.check().await?;
         let mut blocks = (ptr..=self.get_latest().await).collect::<Vec<u64>>();
@@ -78,6 +71,11 @@ impl Polling {
                 blocks.drain(..);
             }
 
+            polling = self.storage.missing(polling.into_iter());
+            if polling.is_empty() {
+                continue;
+            }
+
             log::info!(
                 "polling blocks {}..{}/{}...",
                 polling.first().unwrap_or(&0),
@@ -85,7 +83,6 @@ impl Polling {
                 latest
             );
 
-            polling = self.storage.missing(polling.into_iter());
             let blocks = self.client.poll(polling.into_iter()).await?;
             self.storage.write(blocks).await?;
         }
