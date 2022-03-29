@@ -83,8 +83,9 @@ impl Polling {
             // We print to console as requested by the project client in sequential order
             for b in blocks.iter() {
                 // If fails, let the program crash
-                let bytes = bincode::serialize(b).unwrap();
-                println!("DMLOG BLOCK {:?} {:}", b.height, base64::encode(bytes));
+                let block_proto: crate::pb::Block = b.try_into()?;
+                let encoding = block_proto.encode_to_vec();
+                println!("DMLOG BLOCK {:?} {:}", b.height, hex::encode(bytes));
             }
 
             ptr += blocks.len() as u64;
