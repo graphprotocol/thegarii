@@ -1,15 +1,19 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-use crate::{Client, Env, Result, Storage};
+
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use futures::lock::Mutex;
-use std::sync::Arc;
+
+pub use self::{grpc::Grpc, tracking::Tracking};
+use crate::{Client, Env, Result, Storage};
 
 pub mod grpc;
 mod polling;
 mod tracking;
 
-pub use self::{grpc::Grpc, polling::Polling, tracking::Tracking};
+pub use polling::Polling;
 
 /// shared data
 #[derive(Clone)]

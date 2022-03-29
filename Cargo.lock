@@ -1391,6 +1391,7 @@ name = "thegarii"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "base64",
  "base64-url",
  "bincode",
  "dirs",
