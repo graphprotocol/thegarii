@@ -1,9 +1,11 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{
+    cmd::CommandT,
     pb::{stream_client::StreamClient, Request},
     Env, Result,
 };
+use async_trait::async_trait;
 use futures::StreamExt;
 use structopt::StructOpt;
 
@@ -25,8 +27,9 @@ pub struct Stream {
     pub irreversibility_condition: String,
 }
 
-impl Stream {
-    pub async fn exec(&self, env: Env) -> Result<()> {
+#[async_trait]
+impl CommandT for Stream {
+    async fn exec(&self, env: Env) -> Result<()> {
         let addr = format!("http://{}:{}", env.grpc_addr.ip(), env.grpc_addr.port());
         let mut client = StreamClient::connect(addr.clone()).await?;
         log::info!("connected {:?}", addr);

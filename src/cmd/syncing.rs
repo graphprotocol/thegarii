@@ -1,6 +1,7 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-use crate::{Client, Env, Result, Storage};
+use crate::{cmd::CommandT, Client, Env, Result, Storage};
+use async_trait::async_trait;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -13,9 +14,10 @@ pub struct SyncingStatus {
     pub syncing: u64,
 }
 
-impl Syncing {
+#[async_trait]
+impl CommandT for Syncing {
     /// start services
-    pub async fn exec(&self, env: Env) -> Result<()> {
+    async fn exec(&self, env: Env) -> Result<()> {
         let client = Client::from_env()?;
         let storage = Storage::read_only(&env.db_path)?;
 

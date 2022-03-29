@@ -3,9 +3,11 @@
 
 //! thegarii commands
 use crate::{Env, EnvArguments, Result};
+use async_trait::async_trait;
 use structopt::StructOpt;
 
 mod backup;
+mod console;
 mod get;
 mod poll;
 mod restore;
@@ -17,6 +19,8 @@ mod syncing;
 pub enum Command {
     /// Backup blocks to path
     Backup(backup::Backup),
+    /// Polling blocks and write to stdout
+    Console(console::Console),
     /// Get a block from database or fetch it
     Get(get::Get),
     /// Dry-run random polling with time estimate
@@ -29,6 +33,12 @@ pub enum Command {
     Stream(stream::Stream),
     /// Show the syncing status
     Syncing(syncing::Syncing),
+}
+
+/// Command trait
+#[async_trait]
+pub trait CommandT {
+    async fn exec(&self, env: Env) -> Result<()>;
 }
 
 #[derive(StructOpt, Debug)]
@@ -62,6 +72,7 @@ impl Opt {
         let env = Env::from_args(opt.env)?;
         match opt.command {
             Command::Backup(backup) => backup.exec(env).await?,
+            Command::Console(console) => console.exec(env).await?,
             Command::Get(get) => get.exec(env).await?,
             Command::Poll(poll) => poll.exec(env).await?,
             Command::Restore(restore) => restore.exec(env).await?,
