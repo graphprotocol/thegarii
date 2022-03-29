@@ -84,7 +84,13 @@ impl Polling {
             );
 
             let blocks = self.client.poll(polling.into_iter()).await?;
-            self.storage.write(blocks).await?;
+
+            // We print to console as requested by the project client in sequential order
+            for b in blocks.iter() {
+                println!("DMLOG BLOCK {:?} {:?}", b.height, bincode::serialize(b))
+            }
+
+            // self.storage.write(blocks).await?;
         }
 
         Ok(())
