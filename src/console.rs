@@ -23,17 +23,9 @@ impl Ptr {
     }
 
     /// get mut ptr
-    pub fn get_mut(&mut self) -> &mut u64 {
-        &mut self.value
-    }
-}
-
-impl Drop for Ptr {
-    fn drop(&mut self) {
-        if let Err(e) = fs::write(&self.path, self.value.to_le_bytes()) {
-            // PANIC if writing ptr failed
-            panic!("failed to update ptr to ptr_path, {:?}", e);
-        }
+    pub fn update(&self, value: u64) -> Result<()> {
+        fs::write(&self.path, value.to_string())?;
+        Ok(())
     }
 }
 
@@ -85,8 +77,7 @@ impl Console {
             self.ptr.value
         );
         let latest = self.get_latest().await?;
-        let ptr = self.ptr.get_mut();
-        let mut blocks = (*ptr..=latest).collect::<Vec<u64>>();
+        let mut blocks = (self.ptr.value..=latest).collect::<Vec<u64>>();
 
         if blocks.is_empty() {
             return Ok(());
@@ -105,7 +96,7 @@ impl Console {
                 let height = b.height;
                 let proto: Block = b.try_into()?;
                 println!(
-                    "DM_BLOCK {} {}",
+                    "DMLOG BLOCK {} {}",
                     height,
                     proto
                         .encode_to_vec()
@@ -118,7 +109,7 @@ impl Console {
                         .ok_or(Error::ParseBlockFailed)?
                 );
 
-                *ptr = height;
+                self.ptr.update(height)?;
             }
         }
 
