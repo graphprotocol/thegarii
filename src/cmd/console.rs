@@ -13,7 +13,7 @@ pub struct Console {}
 #[async_trait]
 impl CommandT for Console {
     async fn exec(&self, env: Env) -> Result<()> {
-        let block_time = env.block_time.clone();
+        let block_time = env.block_time;
         let mut service = ConsoleService::new(env)?;
 
         loop {

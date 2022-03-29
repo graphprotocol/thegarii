@@ -63,8 +63,7 @@ impl Console {
             .get_current_block()
             .await?
             .height
-            .max(self.confirms)
-            - self.confirms)
+            .saturating_sub(self.confirms))
     }
 
     /// poll blocks and write to stdout
