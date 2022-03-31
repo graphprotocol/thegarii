@@ -3,20 +3,22 @@
 
 //! start service
 use crate::{
+    cmd::CommandT,
     service::{Grpc, Polling, Service, Shared, Tracking},
     Client, Env, Result, Storage,
 };
+use async_trait::async_trait;
 use futures::{future::join_all, lock::Mutex};
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 pub struct Start {}
 
-impl Start {
+#[async_trait]
+impl CommandT for Start {
     /// start services
-    pub async fn exec(&self, env: Env) -> Result<()> {
+    async fn exec(&self, env: Env) -> Result<()> {
         let client = Client::new(
             env.endpoints.clone(),
             Duration::from_millis(env.timeout),

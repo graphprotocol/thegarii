@@ -1,6 +1,7 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-use crate::{Env, Result};
+use crate::{cmd::CommandT, Env, Result};
+use async_trait::async_trait;
 use rocksdb::backup::{BackupEngine, BackupEngineOptions, RestoreOptions};
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -11,9 +12,10 @@ pub struct Restore {
     pub restore_path: PathBuf,
 }
 
-impl Restore {
+#[async_trait]
+impl CommandT for Restore {
     /// backup database to path
-    pub async fn exec(&self, env: Env) -> Result<()> {
+    async fn exec(&self, env: Env) -> Result<()> {
         let mut engine = BackupEngine::open(&BackupEngineOptions::default(), &self.restore_path)?;
         engine.restore_from_latest_backup(
             &env.db_path,

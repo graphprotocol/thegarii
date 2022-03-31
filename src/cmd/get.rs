@@ -1,6 +1,7 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-use crate::{Client, Env, Result, Storage};
+use crate::{cmd::CommandT, Client, Env, Result, Storage};
+use async_trait::async_trait;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -9,8 +10,9 @@ pub struct Get {
     pub height: u64,
 }
 
-impl Get {
-    pub async fn exec(&self, env: Env) -> Result<()> {
+#[async_trait]
+impl CommandT for Get {
+    async fn exec(&self, env: Env) -> Result<()> {
         let storage = Storage::read_only(&env.db_path)?;
 
         let block = if let Ok(block) = storage.get(self.height) {

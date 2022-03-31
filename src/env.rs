@@ -22,13 +22,21 @@ const CONFIRMS: &str = "CONFIRMS";
 const DEFAULT_CONFIRMS: u64 = 20;
 const TIMEOUT: &str = "TIMEOUT";
 const DEFAULT_TIMEOUT: u64 = 120_000;
+const PTR_PATH: &str = "PTR_PATH";
+const DEFAULT_PTR_PATH: &str = "thegarii/ptr";
 
 /// env arguments for CLI
 #[derive(Debug, StructOpt)]
 pub struct EnvArguments {
+    /// how many blocks polling at one time
+    #[structopt(short = "B", long)]
+    pub batch_blocks: Option<u16>,
     /// time cost for producing a new block in arweave
     #[structopt(short, long)]
     pub block_time: Option<u64>,
+    /// safe blocks against to reorg in polling
+    #[structopt(short, long)]
+    pub confirms: Option<u64>,
     /// storage db path
     #[structopt(short = "D", long)]
     pub db_path: Option<PathBuf>,
@@ -38,39 +46,38 @@ pub struct EnvArguments {
     /// grpc address
     #[structopt(short, long)]
     pub grpc_addr: Option<String>,
-    /// how many blocks polling at one time
-    #[structopt(short = "B", long)]
-    pub batch_blocks: Option<u16>,
-    /// safe blocks against to reorg in polling
+    /// block ptr file path
     #[structopt(short, long)]
-    pub confirms: Option<u64>,
-    /// timeout of http requests
-    #[structopt(short, long)]
-    pub timeout: Option<u64>,
+    pub ptr_path: Option<PathBuf>,
     /// retry times when failed on http requests
     #[structopt(short, long)]
     pub retry: Option<u8>,
+    /// timeout of http requests
+    #[structopt(short, long)]
+    pub timeout: Option<u64>,
 }
 
 /// environments
 #[derive(Clone, Debug)]
 pub struct Env {
+    /// how many blocks polling at one time
+    pub batch_blocks: u16,
     /// time cost for producing a new block in arweave
     pub block_time: u64,
+    /// safe blocks against to reorg in polling
+    pub confirms: u64,
     /// storage db path
     pub db_path: PathBuf,
     /// client endpoints
     pub endpoints: Vec<String>,
     /// grpc address
     pub grpc_addr: SocketAddr,
-    /// how many blocks polling at one time
-    pub batch_blocks: u16,
-    /// safe blocks against to reorg in polling
-    pub confirms: u64,
-    /// timeout of http requests
-    pub timeout: u64,
+    /// block ptr file path
+    pub ptr_path: PathBuf,
     /// retry times when failed on http requests
     pub retry: u8,
+    /// timeout of http requests
+    pub timeout: u64,
 }
 
 impl Env {
@@ -139,6 +146,22 @@ impl Env {
         })
     }
 
+    /// get $PTR_PATH from env or use `$DATA_DIR/$DEFAULT_PTR_PATH`
+    pub fn ptr_path() -> Result<PathBuf> {
+        let path = match env::var(PTR_PATH).map(PathBuf::from) {
+            Ok(p) => p,
+            Err(_) => dirs::data_dir()
+                .map(|p| p.join(DEFAULT_PTR_PATH))
+                .ok_or(Error::NoDataDirectory)?,
+        };
+
+        if !path.exists() {
+            fs::write(&path, 0.to_string())?;
+        }
+
+        Ok(path)
+    }
+
     /// get $TIMEOUT from env or use $DEFAULT_TIMEOUT
     pub fn timeout() -> Result<u64> {
         Ok(match env::var(TIMEOUT) {
@@ -150,13 +173,14 @@ impl Env {
     /// new environments
     pub fn new() -> Result<Self> {
         Ok(Self {
+            batch_blocks: Self::batch_blocks()?,
             block_time: Self::block_time()?,
+            confirms: Self::confirms()?,
             db_path: Self::db_path()?,
             endpoints: Self::endpoints()?,
             grpc_addr: Self::grpc_addr()?,
-            batch_blocks: Self::batch_blocks()?,
+            ptr_path: Self::ptr_path()?,
             retry: Self::retry()?,
-            confirms: Self::confirms()?,
             timeout: Self::timeout()?,
         })
     }
@@ -164,7 +188,9 @@ impl Env {
     /// derive env from arguments
     pub fn from_args(args: EnvArguments) -> Result<Self> {
         Ok(Self {
+            batch_blocks: args.batch_blocks.unwrap_or(Self::batch_blocks()?),
             block_time: args.block_time.unwrap_or(Self::block_time()?),
+            confirms: args.confirms.unwrap_or(Self::confirms()?),
             db_path: args.db_path.unwrap_or(Self::db_path()?),
             endpoints: if args.endpoints.is_empty() {
                 Self::endpoints()?
@@ -176,9 +202,8 @@ impl Env {
             } else {
                 Self::grpc_addr()?
             },
-            batch_blocks: args.batch_blocks.unwrap_or(Self::batch_blocks()?),
+            ptr_path: args.ptr_path.unwrap_or(Self::ptr_path()?),
             retry: args.retry.unwrap_or(Self::retry()?),
-            confirms: args.confirms.unwrap_or(Self::confirms()?),
             timeout: args.timeout.unwrap_or(Self::timeout()?),
         })
     }

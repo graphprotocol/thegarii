@@ -3,7 +3,7 @@
 
 //! the graii results
 
-use std::{convert::Infallible, env::VarError, io, net::AddrParseError, num::ParseIntError};
+use std::{convert::Infallible, env::VarError, net::AddrParseError, num::ParseIntError};
 
 /// the graii errors
 #[derive(thiserror::Error, Debug)]
@@ -12,8 +12,6 @@ pub enum Error {
     BlockNotFound(u64),
     #[error("no endpoints provided")]
     EmptyEndpoints,
-    #[error(transparent)]
-    Io(#[from] io::Error),
     #[error("invalid block range")]
     InvalidRange,
     #[error("invalid timestamp")]
@@ -24,6 +22,8 @@ pub enum Error {
     NoDataDirectory,
     #[error("no block has been marked as latest block rn")]
     NoLatestBlockRecord,
+    #[error("parse block failed")]
+    ParseBlockFailed,
     #[error("can not write data in read-only mode")]
     ReadOnlyDatabase,
     #[error(transparent)]
@@ -34,6 +34,8 @@ pub enum Error {
     Bincode(#[from] bincode::Error),
     #[error(transparent)]
     Infallible(#[from] Infallible),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
     #[error(transparent)]
