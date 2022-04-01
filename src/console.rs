@@ -32,6 +32,7 @@ impl Ptr {
 /// console service
 pub struct Console {
     batch: u16,
+    block_time: u64,
     client: Arc<Client>,
     confirms: u64,
     ptr: Ptr,
@@ -50,6 +51,7 @@ impl Console {
 
         Ok(Self {
             batch: env.batch_blocks,
+            block_time: env.block_time,
             client,
             confirms: env.confirms,
             ptr,
@@ -113,5 +115,52 @@ impl Console {
         }
 
         Ok(())
+    }
+
+    /// run as service
+    pub async fn exec(&mut self) -> Result<()> {
+        loop {
+            tokio::time::sleep(Duration::from_millis(self.block_time)).await;
+            self.poll().await?;
+        }
+    }
+}
+
+pub mod cmd {
+    use crate::{console::Console, Env, EnvArguments, Result};
+    use structopt::StructOpt;
+
+    #[derive(StructOpt, Debug)]
+    #[structopt(name = "thegaril", author = "info@chainsafe.io")]
+    pub struct Opt {
+        /// Activate debug mode
+        #[structopt(short, long)]
+        pub debug: bool,
+
+        #[structopt(flatten)]
+        pub env: EnvArguments,
+    }
+
+    impl Opt {
+        /// exec commands
+        pub async fn exec() -> Result<()> {
+            let opt = Opt::from_args();
+
+            if opt.debug {
+                env_logger::Builder::from_env(
+                    env_logger::Env::default().default_filter_or("thegarii"),
+                )
+                .init();
+            } else {
+                env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+                    .init();
+            }
+
+            let env = Env::from_args(opt.env)?;
+
+            Console::new(env)?.exec().await?;
+
+            Ok(())
+        }
     }
 }

@@ -1,5 +1,6 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
+#![cfg(feature = "full")]
 
 //! thegarii commands
 use crate::{Env, EnvArguments, Result};
@@ -42,7 +43,7 @@ pub trait CommandT {
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "thegaril", author = "info@chainsafe.io")]
+#[structopt(name = "thegarii", author = "info@chainsafe.io")]
 pub struct Opt {
     /// Activate debug mode
     #[structopt(short, long)]

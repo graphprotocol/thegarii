@@ -37,7 +37,7 @@ pub struct EnvArguments {
     /// safe blocks against to reorg in polling
     #[structopt(short, long)]
     pub confirms: Option<u64>,
-    /// storage db path
+    /// storage db path ( only works with full features )
     #[structopt(short = "D", long)]
     pub db_path: Option<PathBuf>,
     /// client endpoints

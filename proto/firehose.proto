@@ -85,7 +85,7 @@ message Response {
   // - sf.ethereum.codec.v1.Block
   // - sf.near.codec.v1.Block
   // - sf.solana.codec.v1.Block
-  cs.arweave.codec.v1.Block block = 1;
+  sf.arweave.type.v1.Block block = 1;
   ForkStep step = 6;
   string cursor = 10;
 }

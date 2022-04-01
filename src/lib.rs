@@ -5,21 +5,29 @@
 //!
 //! this library fetches blocks from Arweave and generates firehose blocks for the Graph
 pub mod client;
-pub mod cmd;
 mod console;
 mod encoding;
 pub mod env;
 pub mod pb;
 pub mod result;
-pub mod service;
-mod storage;
 pub mod types;
+
+#[cfg(feature = "full")]
+pub mod cmd;
+#[cfg(feature = "full")]
+pub mod service;
+#[cfg(feature = "full")]
+mod storage;
+
+#[cfg(not(feature = "firehose"))]
+pub use cmd::Opt;
+
+#[cfg(feature = "firehose")]
+pub use console::cmd::Opt;
 
 pub use self::{
     client::Client,
-    cmd::Opt,
     console::Console,
     env::{Env, EnvArguments},
     result::{Error, Result},
-    storage::Storage,
 };

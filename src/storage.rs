@@ -1,7 +1,6 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-
-#![allow(unused)]
+#![cfg(feature = "full")]
 use crate::{env, types::FirehoseBlock, Error, Result};
 use futures::lock::Mutex;
 use rocksdb::{IteratorMode, WriteBatch, DB};

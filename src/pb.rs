@@ -9,25 +9,17 @@ use core::convert::{TryFrom, TryInto};
 use prost_types::Timestamp;
 use std::time::{Duration, SystemTime};
 
-pub mod cs {
+pub mod sf {
     pub mod arweave {
-        pub mod codec {
+        pub mod r#type {
             pub mod v1 {
-                tonic::include_proto!("cs.arweave.codec.v1");
+                include!(concat!(env!("OUT_DIR"), "/sf.arweave.r#type.v1.rs"));
             }
         }
     }
 }
 
-pub mod sf {
-    pub mod firehose {
-        pub mod v1 {
-            tonic::include_proto!("sf.firehose.v1");
-        }
-    }
-}
-
-pub use self::{cs::arweave::codec::v1::*, sf::firehose::v1::*};
+pub use self::sf::arweave::r#type::v1::*;
 
 /// decode string to bytes with base64url
 fn bd(s: &str) -> Result<Vec<u8>> {
@@ -129,3 +121,15 @@ impl TryFrom<types::Tag> for Tag {
         })
     }
 }
+
+#[cfg(feature = "full")]
+pub mod sf {
+    pub mod firehose {
+        pub mod v1 {
+            include!(concat!(env!("PROTOBUFS"), "/sf.firehose.v1.rs"));
+        }
+    }
+}
+
+#[cfg(feature = "full")]
+pub use self::sf::firehose::v1::*;

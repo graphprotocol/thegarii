@@ -1,5 +1,6 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
+#![cfg(feature = "full")]
 use crate::{Client, Env, Result, Storage};
 use async_trait::async_trait;
 use futures::lock::Mutex;
