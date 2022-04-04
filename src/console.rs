@@ -13,11 +13,10 @@ pub struct Ptr {
 impl Ptr {
     /// new ptr host
     pub fn new(path: PathBuf) -> Result<Self> {
-        let value: u64 = if let Ok(v) = fs::read_to_string(&path) {
-            v.parse()?
-        } else {
-            0
-        };
+        let value: u64 = fs::read_to_string(&path)
+            .ok()
+            .and_then(|v: String| v.parse().ok())
+            .unwrap_or(0);
 
         Ok(Ptr { value, path })
     }
