@@ -1,9 +1,8 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 
-use crate::{cmd::CommandT, Console as ConsoleService, Env, EnvArguments, Result};
+use crate::{cmd::CommandT, Console as ConsoleService, Env, Result};
 use async_trait::async_trait;
-use std::time::Duration;
 use structopt::StructOpt;
 
 /// polling blocks and write to stdout

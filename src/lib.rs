@@ -19,6 +19,9 @@ pub mod service;
 #[cfg(feature = "full")]
 mod storage;
 
+#[cfg(feature = "full")]
+pub use storage::Storage;
+
 #[cfg(not(feature = "firehose"))]
 pub use cmd::Opt;
 

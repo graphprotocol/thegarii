@@ -1,13 +1,10 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 #![cfg(feature = "full")]
-use crate::{env, types::FirehoseBlock, Error, Result};
+use crate::{types::FirehoseBlock, Error, Result};
 use futures::lock::Mutex;
 use rocksdb::{IteratorMode, WriteBatch, DB};
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{path::Path, sync::Arc};
 
 /// firehose block storage
 #[derive(Clone)]
