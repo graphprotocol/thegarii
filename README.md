@@ -1,8 +1,8 @@
 # thegarii
 
-[![rust](https://img.shields.io/badge/github-ChainSafe/thegarii-8da0cb?style=for-the-badge&labelColor=555555&logo=github)](https://github.com/ChainSafe/thegarii)]
-[![crates](https://img.shields.io/crates/v/thegarii?style=for-the-badge)](https://crates.io/crates/thegarii)
-[![building](https://img.shields.io/github/workflow/status/ChainSafe/thegarii/CI/main?style=for-the-badge)](https://github.com/ChainSafe/thegarii/actions?query=branch%3Amain)
+[<img alt="github" src="https://img.shields.io/badge/github-ChainSafe/thegarii-8da0cb?style=for-the-badge&labelColor=555555&logo=github" height = "20" />](https://github.com/ChainSafe/thegarii)
+[<img alt="crates.io" src="https://img.shields.io/crates/v/thegarii?style=for-the-badge" height = "20" />](https://crates.io/crates/thegarii)
+[<img alt="build status" src=https://img.shields.io/github/workflow/status/ChainSafe/thegarii/CI/main?style=for-the-badge" height = "20" />](https://github.com/ChainSafe/thegarii/actions?query=branch%3Amain)
 
 The polling service for Arweawve blocks
 
