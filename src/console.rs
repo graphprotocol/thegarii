@@ -71,10 +71,11 @@ impl Console {
     pub async fn poll(&mut self) -> Result<()> {
         log::info!("start polling blocks...");
         log::info!(
-            "\n\t-batch: {}\n\t-confirms: {}\n\t-ptr: {}",
+            "\n\t-batch: {}\n\t-confirms: {}\n\t-ptr: {}\n\t-endpoints: {:?}",
             self.batch,
             self.confirms,
-            self.ptr.value
+            self.ptr.value,
+            self.client.endpoints
         );
         let latest = self.get_latest().await?;
         let mut blocks = (self.ptr.value..=latest).collect::<Vec<u64>>();
