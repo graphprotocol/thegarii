@@ -37,14 +37,14 @@ OPTIONS:
 
 # Environments
     
-| KEY          | DEFAULT_VALUE          | DESCRIPTION                                 |
-|--------------|------------------------|---------------------------------------------|
-| ENDPOINTS    | "https://arweave.net"  | for multiple endpoints, split them with ',' |
-| BATCH_BLOCKS | 50                     | how many blocks batch at one time           |
-| CONFIRMS     | 20                     | irreversibility condition                   |
-| PTR_PATH     | $APP_DATA/thegarii/ptr | the file stores the block ptr for polling   |
-| retry        | 10                     | retry times when failed on http requests    |
-| timeout      | 120_000                | timeout of http requests                    |
+| KEY           | DEFAULT\_VALUE           | DESCRIPTION                                 |
+|---------------|--------------------------|---------------------------------------------|
+| ENDPOINTS     | `"https://arweave.net"`  | for multiple endpoints, split them with ',' |
+| BATCH\_BLOCKS | `50`                     | how many blocks batch at one time           |
+| CONFIRMS      | `20`                     | irreversibility condition                   |
+| PTR\_PATH     | `$APP_DATA/thegarii/ptr` | the file stores the block ptr for polling   |
+| retry         | `10`                     | retry times when failed on http requests    |
+| timeout       | `120_000`                | timeout of http requests                    |
 
 
 ## Dev
