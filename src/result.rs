@@ -12,6 +12,8 @@ pub enum Error {
     BlockNotFound(u64),
     #[error("no endpoints provided")]
     EmptyEndpoints,
+    #[error("invalid path")]
+    InvalidPath,
     #[error("invalid block range")]
     InvalidRange,
     #[error("invalid timestamp")]

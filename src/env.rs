@@ -160,6 +160,7 @@ impl Env {
         };
 
         if !path.exists() {
+            fs::create_dir_all(&path.parent().ok_or(Error::InvalidPath)?)?;
             fs::write(&path, 0.to_string())?;
         }
 
