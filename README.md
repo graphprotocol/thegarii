@@ -58,3 +58,8 @@ To start estimating the total ingestion time using the following command:
 ```shell
 ./target/release/thegarii poll -h
 ```
+
+To compile, set env variables and run in one go, you can use:
+```shell
+ENDPOINTS=http://178.62.222.154:1984,http://localhost:1984 cargo run --release -- poll -h
+```
