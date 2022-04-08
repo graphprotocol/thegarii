@@ -42,17 +42,14 @@ pub enum Error {
     ParseInt(#[from] ParseIntError),
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
-    #[cfg(feature = "full")]
-    #[error(transparent)]
-    RocksDB(#[from] rocksdb::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
-    #[cfg(feature = "full")]
+    #[cfg(feature = "stream")]
     #[error(transparent)]
     Status(#[from] tonic::Status),
     #[error(transparent)]
     Timestamp(#[from] prost_types::TimestampOutOfSystemRangeError),
-    #[cfg(feature = "full")]
+    #[cfg(feature = "stream")]
     #[error(transparent)]
     Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]

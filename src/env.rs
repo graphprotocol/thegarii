@@ -3,17 +3,13 @@
 
 //! App envorionments
 use crate::{Error, Result};
-use std::{env, fs, net::SocketAddr, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 use structopt::StructOpt;
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
 const DEFAULT_BLOCK_TIME: u64 = 20_000;
-const DB_PATH: &str = "DB_PATH";
-const DEFAULT_DB_PATH: &str = "thegarii/thegarii.db";
 const ENDPOINTS: &str = "ENDPOINTS";
 const DEFAULT_ENDPOINTS: &str = "https://arweave.net";
-const GRPC_ADDR: &str = "GRPC_ADDR";
-const DEFAULT_GRPC_ADDR: &str = "0.0.0.0:4891";
 const BATCH_BLOCKS: &str = "BATCH_BLOCKS";
 const DEFAULT_BATCH_BLOCKS: u16 = 50;
 const RETRY: &str = "RETRY";
@@ -37,17 +33,9 @@ pub struct EnvArguments {
     /// safe blocks against to reorg in polling
     #[structopt(short, long, default_value = "20")]
     pub confirms: u64,
-    /// storage db path
-    #[structopt(short = "D", long)]
-    #[cfg(feature = "full")]
-    pub db_path: Option<PathBuf>,
     /// client endpoints
     #[structopt(short, long, default_value = "https://arweave.net/")]
     pub endpoints: Vec<String>,
-    /// grpc address
-    #[structopt(short, long)]
-    #[cfg(feature = "full")]
-    pub grpc_addr: Option<String>,
     /// block ptr file path
     #[structopt(short, long)]
     pub ptr_path: Option<PathBuf>,
@@ -68,14 +56,8 @@ pub struct Env {
     pub block_time: u64,
     /// safe blocks against to reorg in polling
     pub confirms: u64,
-    /// storage db path
-    #[cfg(feature = "full")]
-    pub db_path: PathBuf,
     /// client endpoints
     pub endpoints: Vec<String>,
-    /// grpc address
-    #[cfg(feature = "full")]
-    pub grpc_addr: SocketAddr,
     /// block ptr file path
     pub ptr_path: PathBuf,
     /// retry times when failed on http requests
@@ -93,19 +75,6 @@ impl Env {
         })
     }
 
-    /// get $DB_PATH from env or use `$DATA_DIR/$DEFAULT_DB_PATH`
-    pub fn db_path() -> Result<PathBuf> {
-        let path = match env::var(DB_PATH).map(PathBuf::from) {
-            Ok(p) => p,
-            Err(_) => dirs::data_dir()
-                .map(|p| p.join(DEFAULT_DB_PATH))
-                .ok_or(Error::NoDataDirectory)?,
-        };
-
-        fs::create_dir_all(&path)?;
-        Ok(path)
-    }
-
     /// get $ENDPOINTS from env or use $DEFAULT_ENDPOINTS
     pub fn endpoints() -> Result<Vec<String>> {
         let raw_endpoints = match env::var(ENDPOINTS) {
@@ -114,16 +83,6 @@ impl Env {
         };
 
         Ok(raw_endpoints.split(',').map(|e| e.to_string()).collect())
-    }
-
-    /// get $GRPC_ADDR from env or use $DEFAULT_GRPC_ADDR
-    pub fn grpc_addr() -> Result<SocketAddr> {
-        let addr = match env::var(GRPC_ADDR) {
-            Ok(addr) => addr.parse()?,
-            Err(_) => DEFAULT_GRPC_ADDR.parse()?,
-        };
-
-        Ok(addr)
     }
 
     /// get $BATCH_BLOCKS from env or use $DEFAULT_BATCH_BLOCKS
@@ -181,11 +140,7 @@ impl Env {
             batch_blocks: Self::batch_blocks()?,
             block_time: Self::block_time()?,
             confirms: Self::confirms()?,
-            #[cfg(feature = "full")]
-            db_path: Self::db_path()?,
             endpoints: Self::endpoints()?,
-            #[cfg(feature = "full")]
-            grpc_addr: Self::grpc_addr()?,
             ptr_path: Self::ptr_path()?,
             retry: Self::retry()?,
             timeout: Self::timeout()?,
@@ -198,18 +153,10 @@ impl Env {
             batch_blocks: args.batch_blocks,
             block_time: args.block_time,
             confirms: args.confirms,
-            #[cfg(feature = "full")]
-            db_path: args.db_path.unwrap_or(Self::db_path()?),
             endpoints: if args.endpoints.is_empty() {
                 Self::endpoints()?
             } else {
                 args.endpoints
-            },
-            #[cfg(feature = "full")]
-            grpc_addr: if let Some(addr) = args.grpc_addr {
-                addr.parse()?
-            } else {
-                Self::grpc_addr()?
             },
             ptr_path: args.ptr_path.unwrap_or(Self::ptr_path()?),
             retry: args.retry,
