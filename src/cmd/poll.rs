@@ -1,7 +1,6 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-use crate::{cmd::CommandT, Client, Env, Error, Result};
-use async_trait::async_trait;
+use crate::{Client, Env, Error, Result};
 use rand::Rng;
 use std::time::Instant;
 use structopt::StructOpt;
@@ -54,11 +53,8 @@ impl Poll {
 
         elapsed
     }
-}
 
-#[async_trait]
-impl CommandT for Poll {
-    async fn exec(&self, env: Env) -> Result<()> {
+    pub async fn exec(&self, env: Env) -> Result<()> {
         let client = Client::from_env()?;
         let current = client.get_current_block().await?.height;
 

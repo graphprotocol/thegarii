@@ -16,7 +16,8 @@ use std::time::Duration;
 /// Arweave client
 pub struct Client {
     client: ReqwestClient,
-    endpoints: Vec<String>,
+    /// arweave endpoints
+    pub endpoints: Vec<String>,
     retry: u8,
 }
 

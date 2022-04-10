@@ -1,17 +1,19 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{
-    cmd::CommandT,
     pb::{stream_client::StreamClient, Request},
-    Env, Result,
+    Result,
 };
-use async_trait::async_trait;
 use futures::StreamExt;
+use std::net::SocketAddr;
 use structopt::StructOpt;
 
 /// stream blocks from firehose service
 #[derive(StructOpt, Debug)]
 pub struct Stream {
+    /// endpoint of firehose-arweave
+    #[structopt(short = "f", long, default_value = "0.0.0.0:16042")]
+    pub firehose_endpoint: SocketAddr,
     /// Controls where the stream of blocks will start.
     #[structopt(short = "s", long, default_value = "0")]
     pub start_block_num: i64,
@@ -27,10 +29,13 @@ pub struct Stream {
     pub irreversibility_condition: String,
 }
 
-#[async_trait]
-impl CommandT for Stream {
-    async fn exec(&self, env: Env) -> Result<()> {
-        let addr = format!("http://{}:{}", env.grpc_addr.ip(), env.grpc_addr.port());
+impl Stream {
+    pub async fn exec(&self) -> Result<()> {
+        let addr = format!(
+            "http://{}:{}",
+            self.firehose_endpoint.ip(),
+            self.firehose_endpoint.port()
+        );
         let mut client = StreamClient::connect(addr.clone()).await?;
         log::info!("connected {:?}", addr);
 

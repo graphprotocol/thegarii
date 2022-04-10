@@ -12,6 +12,8 @@ pub enum Error {
     BlockNotFound(u64),
     #[error("no endpoints provided")]
     EmptyEndpoints,
+    #[error("invalid path")]
+    InvalidPath,
     #[error("invalid block range")]
     InvalidRange,
     #[error("invalid timestamp")]
@@ -41,13 +43,13 @@ pub enum Error {
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
-    RocksDB(#[from] rocksdb::Error),
-    #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
+    #[cfg(feature = "stream")]
     #[error(transparent)]
     Status(#[from] tonic::Status),
     #[error(transparent)]
     Timestamp(#[from] prost_types::TimestampOutOfSystemRangeError),
+    #[cfg(feature = "stream")]
     #[error(transparent)]
     Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]
