@@ -6,8 +6,6 @@ use crate::{
     types::{self, FirehoseBlock, Poa},
 };
 use core::convert::{TryFrom, TryInto};
-use prost_types::Timestamp;
-use std::time::{Duration, SystemTime};
 
 pub mod sf {
     pub mod arweave {
@@ -36,12 +34,6 @@ fn bd(s: &str) -> Result<Vec<u8>> {
     base64_url::decode(s).map_err(Into::into)
 }
 
-fn convert_timestamp(t: u64) -> Option<Timestamp> {
-    SystemTime::UNIX_EPOCH
-        .checked_add(Duration::from_secs(t))
-        .map(Into::into)
-}
-
 impl TryFrom<FirehoseBlock> for Block {
     type Error = Error;
 
@@ -51,8 +43,8 @@ impl TryFrom<FirehoseBlock> for Block {
             indep_hash: bd(&block.indep_hash)?,
             nonce: bd(&block.nonce)?,
             previous_block: bd(&block.previous_block)?,
-            timestamp: convert_timestamp(block.timestamp),
-            last_retarget: convert_timestamp(block.last_retarget),
+            timestamp: block.timestamp,
+            last_retarget: block.last_retarget,
             diff: block.diff,
             height: block.height,
             hash: bd(&block.hash)?,
@@ -63,7 +55,7 @@ impl TryFrom<FirehoseBlock> for Block {
                 .map(TryInto::try_into)
                 .collect::<Result<Vec<_>>>()?,
             wallet_list: bd(&block.wallet_list)?,
-            reward_addr: block.reward_addr,
+            reward_addr: bd(&block.reward_addr)?,
             tags: block
                 .tags
                 .into_iter()
@@ -114,7 +106,7 @@ impl TryFrom<types::Transaction> for Transaction {
             quantity: tx.quantity,
             data: bd(&tx.data)?,
             data_size: tx.data_size,
-            data_root: tx.data_root,
+            data_root: bd(&tx.data_root)?,
             signature: bd(&tx.signature)?,
             reward: tx.reward,
         })
