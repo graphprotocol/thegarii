@@ -1,30 +1,47 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-use crate::{client::Client, env::Env, pb::Block, types::FirehoseBlock, Error, Result};
+use crate::{
+    client::Client,
+    env::Env,
+    pb::Block,
+    types::{FirehoseBlock, U256},
+    Error, Result,
+};
 use prost::Message;
 use std::{collections::BTreeMap, time::Duration};
+
+#[derive(Debug, Clone)]
+struct BlockInfo {
+    pub indep_hash: String,
+    pub cumulative_diff: U256,
+}
 
 /// polling service
 pub struct Polling {
     batch: usize,
+    block_time: u64,
     client: Client,
     confirms: u64,
     end: Option<u64>,
-    live_blocks: BTreeMap<u64, String>,
+    latest: u64,
+    live_blocks: BTreeMap<u64, BlockInfo>,
     ptr: u64,
 }
 
 impl Polling {
     /// new polling service
-    pub fn new(ptr: u64, end: Option<u64>, env: Env) -> Result<Self> {
+    pub async fn new(ptr: u64, end: Option<u64>, env: Env) -> Result<Self> {
         let client = Client::new(env.endpoints, Duration::from_millis(env.timeout), env.retry)?;
         let batch = env.batch_blocks as usize;
+        let latest = client.get_current_block().await?.height;
 
         Ok(Self {
             batch,
+            block_time: env.block_time,
             confirms: env.confirms,
             client,
             end,
+            latest,
             live_blocks: Default::default(),
             ptr,
         })
@@ -54,37 +71,52 @@ impl Polling {
         Ok(())
     }
 
-    /// comparing which block have the potential to be irreversible
-    ///
-    /// if true, rhs wins
-    fn challenge_block(lhs: &FirehoseBlock, rhs: &FirehoseBlock) -> bool {
-        false
-    }
-
     /// compare blocks with current live blocks
     ///
-    /// return the height of fork block if exists
-    fn cmp_live_blocks(&mut self, blocks: &[FirehoseBlock], end: u64) -> Result<Option<u64>> {
+    /// # TODO
+    ///
+    /// - return the height of fork block if exists
+    /// - replace live_blocks field with a sorted stack
+    fn cmp_live_blocks(&mut self, blocks: &[FirehoseBlock]) -> Result<()> {
         if blocks.is_empty() {
-            return Ok(None);
+            return Ok(());
         }
 
         // # Safty
         //
         // this will never happen since we have an empty check above
         let last = blocks.last().ok_or(Error::ParseBlockPtrFailed)?.clone();
-        if last.height + self.confirms < end {
-            return Ok(None);
+        if last.height + self.confirms < self.latest {
+            return Ok(());
         }
 
-        // - check if have fork
+        // - detect if have fork
         // - add new live blocks
         for b in blocks {
-            // check fork
+            let cumulative_diff =
+                U256::from_dec_str(&b.cumulative_diff.clone().unwrap_or("0".into()))?;
+
+            let block_info = BlockInfo {
+                indep_hash: b.indep_hash.clone(),
+                cumulative_diff,
+            };
+
+            // detect fork
             if let Some(value) = self.live_blocks.get(&b.height) {
-                if *value != b.indep_hash {
-                    self.live_blocks.insert(b.height, b.indep_hash.clone());
+                // - comparing if have different `indep_hash`
+                // - comparing if the block belongs to a longer chain
+                if *value.indep_hash != b.indep_hash && cumulative_diff > value.cumulative_diff {
+                    // TODO
+                    //
+                    // return fork number
+                } else {
+                    continue;
                 }
+            }
+
+            // update live blocks
+            if b.height + self.confirms > self.latest {
+                self.live_blocks.insert(b.height, block_info);
             }
         }
 
@@ -93,10 +125,10 @@ impl Polling {
             .live_blocks
             .clone()
             .into_iter()
-            .filter(|(h, _)| *h > end - self.confirms)
+            .filter(|(h, _)| *h + self.confirms > self.latest)
             .collect();
 
-        Ok(None)
+        Ok(())
     }
 
     /// poll blocks and write to stdout
@@ -120,6 +152,7 @@ impl Polling {
             // this will never happen since we have an empty check above
             let new_ptr = polling.last().ok_or(Error::ParseBlockPtrFailed)?.clone();
             let blocks = self.client.poll(polling.into_iter()).await?;
+            self.cmp_live_blocks(&blocks)?;
             for b in blocks {
                 Self::dm_log(b)?;
             }
@@ -139,6 +172,10 @@ impl Polling {
             return Ok(());
         }
 
-        Ok(())
+        loop {
+            tokio::time::sleep(Duration::from_millis(self.block_time)).await;
+            self.poll(self.ptr..self.latest).await?;
+            self.latest = self.client.get_current_block().await?.height;
+        }
     }
 }

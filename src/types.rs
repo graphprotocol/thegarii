@@ -169,3 +169,7 @@ impl From<Block> for FirehoseBlock {
         }
     }
 }
+
+uint::construct_uint! {
+    pub struct U256(4);
+}

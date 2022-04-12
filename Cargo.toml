@@ -31,6 +31,7 @@ structopt = "0.3.26"
 thiserror = "1.0.30"
 tonic = { version = "0.6.2", optional = true }
 tokio = { version = "1", features = ["full"] }
+uint = "0.9"
 
 [features]
 default = [ ]

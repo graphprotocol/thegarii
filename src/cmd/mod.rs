@@ -16,9 +16,9 @@ mod stream;
 pub enum Command {
     /// Get a block from database or fetch it
     Get(get::Get),
-    /// Polling blocks and print to stdout
+    /// Poll blocks and print to stdout
     Console(console::Console),
-    /// Dry-run random polling with time estimate
+    /// Dry-run random polling with time estimating
     Poll(poll::Poll),
     /// Stream blocks from gRPC service
     #[cfg(feature = "stream")]
@@ -53,7 +53,11 @@ impl Opt {
                 .init();
         }
 
+        // extract env
         let env = Env::from_args(opt.env)?;
+        log::info!("\n{:#?}", env);
+
+        // process commmands
         match opt.command {
             Command::Get(get) => get.exec().await?,
             Command::Poll(poll) => poll.exec(env).await?,

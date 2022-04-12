@@ -10,17 +10,17 @@ pub struct Console {
     #[structopt(short = "s", long, default_value = "0")]
     start: u64,
     /// polling end to, if `None`, polling to the latest
-    #[structopt(short = "s", long)]
+    #[structopt(short = "e", long)]
     end: Option<u64>,
 }
 
 impl Console {
     /// run as service
     pub async fn exec(&self, env: Env) -> Result<()> {
-        log::info!("{:#?}", self);
+        log::info!("\n{:#?}", self);
         log::info!("start polling blocks...");
 
-        let mut polling = Polling::new(self.start, self.end, env)?;
+        let mut polling = Polling::new(self.start, self.end, env).await?;
         polling.start().await?;
 
         Ok(())

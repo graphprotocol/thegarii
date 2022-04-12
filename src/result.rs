@@ -53,6 +53,8 @@ pub enum Error {
     #[error(transparent)]
     Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]
+    Uint(#[from] uint::FromDecStrErr),
+    #[error(transparent)]
     Var(#[from] VarError),
 }
 
