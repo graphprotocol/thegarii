@@ -17,7 +17,7 @@ pub struct Console {
 impl Console {
     /// run as service
     pub async fn exec(&self, env: Env) -> Result<()> {
-        log::info!("\n{:#?}", self);
+        log::debug!("\n{:#?}", self);
         log::info!("start polling blocks...");
 
         let mut polling = Polling::new(self.start, self.end, env).await?;

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 //! App envorionments
-use crate::{Error, Result};
-use std::{env, fs, path::PathBuf};
+use crate::Result;
+use std::env;
 use structopt::StructOpt;
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
@@ -18,8 +18,6 @@ const CONFIRMS: &str = "CONFIRMS";
 const DEFAULT_CONFIRMS: u64 = 20;
 const TIMEOUT: &str = "TIMEOUT";
 const DEFAULT_TIMEOUT: u64 = 120_000;
-const PTR_PATH: &str = "PTR_PATH";
-const DEFAULT_PTR_PATH: &str = "thegarii/ptr";
 
 /// env arguments for CLI
 #[derive(Debug, StructOpt)]
@@ -36,9 +34,6 @@ pub struct EnvArguments {
     /// client endpoints
     #[structopt(short, long, default_value = "https://arweave.net/")]
     pub endpoints: Vec<String>,
-    /// block ptr file path
-    #[structopt(short, long)]
-    pub ptr_path: Option<PathBuf>,
     /// retry times when failed on http requests
     #[structopt(short, long, default_value = "10")]
     pub retry: u8,
@@ -58,8 +53,6 @@ pub struct Env {
     pub confirms: u64,
     /// client endpoints
     pub endpoints: Vec<String>,
-    /// block ptr file path
-    pub ptr_path: PathBuf,
     /// retry times when failed on http requests
     pub retry: u8,
     /// timeout of http requests
@@ -109,23 +102,6 @@ impl Env {
         })
     }
 
-    /// get $PTR_PATH from env or use `$DATA_DIR/$DEFAULT_PTR_PATH`
-    pub fn ptr_path() -> Result<PathBuf> {
-        let path = match env::var(PTR_PATH).map(PathBuf::from) {
-            Ok(p) => p,
-            Err(_) => dirs::data_dir()
-                .map(|p| p.join(DEFAULT_PTR_PATH))
-                .ok_or(Error::NoDataDirectory)?,
-        };
-
-        if !path.exists() {
-            fs::create_dir_all(&path.parent().ok_or(Error::InvalidPath)?)?;
-            fs::write(&path, 0.to_string())?;
-        }
-
-        Ok(path)
-    }
-
     /// get $TIMEOUT from env or use $DEFAULT_TIMEOUT
     pub fn timeout() -> Result<u64> {
         Ok(match env::var(TIMEOUT) {
@@ -141,7 +117,6 @@ impl Env {
             block_time: Self::block_time()?,
             confirms: Self::confirms()?,
             endpoints: Self::endpoints()?,
-            ptr_path: Self::ptr_path()?,
             retry: Self::retry()?,
             timeout: Self::timeout()?,
         })
@@ -158,7 +133,6 @@ impl Env {
             } else {
                 args.endpoints
             },
-            ptr_path: args.ptr_path.unwrap_or(Self::ptr_path()?),
             retry: args.retry,
             timeout: args.timeout,
         })

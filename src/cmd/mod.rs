@@ -55,7 +55,7 @@ impl Opt {
 
         // extract env
         let env = Env::from_args(opt.env)?;
-        log::info!("\n{:#?}", env);
+        log::debug!("\n{:#?}", env);
 
         // process commmands
         match opt.command {

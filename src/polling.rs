@@ -33,7 +33,6 @@ impl Polling {
     pub async fn new(ptr: u64, end: Option<u64>, env: Env) -> Result<Self> {
         let client = Client::new(env.endpoints, Duration::from_millis(env.timeout), env.retry)?;
         let batch = env.batch_blocks as usize;
-        let latest = client.get_current_block().await?.height;
 
         Ok(Self {
             batch,
@@ -41,7 +40,7 @@ impl Polling {
             confirms: env.confirms,
             client,
             end,
-            latest,
+            latest: 0,
             live_blocks: Default::default(),
             ptr,
         })
@@ -77,7 +76,7 @@ impl Polling {
     ///
     /// - return the height of fork block if exists
     /// - replace live_blocks field with a sorted stack
-    fn cmp_live_blocks(&mut self, blocks: &[FirehoseBlock]) -> Result<()> {
+    fn cmp_live_blocks(&mut self, blocks: &mut Vec<FirehoseBlock>) -> Result<()> {
         if blocks.is_empty() {
             return Ok(());
         }
@@ -92,7 +91,8 @@ impl Polling {
 
         // - detect if have fork
         // - add new live blocks
-        for b in blocks {
+        let mut dup_blocks = vec![];
+        for b in blocks.iter() {
             let cumulative_diff =
                 U256::from_dec_str(&b.cumulative_diff.clone().unwrap_or("0".into()))?;
 
@@ -110,6 +110,7 @@ impl Polling {
                     //
                     // return fork number
                 } else {
+                    dup_blocks.push(b.height);
                     continue;
                 }
             }
@@ -120,6 +121,9 @@ impl Polling {
             }
         }
 
+        // remove emitted live blocks
+        // blocks.retain(|b| !dup_blocks.contains(&b.height));
+
         // trim irreversible blocks
         self.live_blocks = self
             .live_blocks
@@ -128,6 +132,10 @@ impl Polling {
             .filter(|(h, _)| *h + self.confirms > self.latest)
             .collect();
 
+        log::trace!(
+            "live blocks: {:?}",
+            self.live_blocks.keys().into_iter().collect::<Vec<&u64>>()
+        );
         Ok(())
     }
 
@@ -151,14 +159,14 @@ impl Polling {
             //
             // this will never happen since we have an empty check above
             let new_ptr = polling.last().ok_or(Error::ParseBlockPtrFailed)?.clone();
-            let blocks = self.client.poll(polling.into_iter()).await?;
-            self.cmp_live_blocks(&blocks)?;
+            let mut blocks = self.client.poll(polling.into_iter()).await?;
+            self.cmp_live_blocks(&mut blocks)?;
             for b in blocks {
                 Self::dm_log(b)?;
             }
 
             // update ptr
-            self.ptr = new_ptr;
+            self.ptr = new_ptr + 1;
         }
 
         Ok(())
@@ -167,15 +175,22 @@ impl Polling {
     /// start polling service
     pub async fn start(&mut self) -> Result<()> {
         if let Some(end) = self.end {
-            self.poll(self.ptr..end).await?;
+            self.poll(self.ptr..=end).await?;
 
             return Ok(());
         }
 
         loop {
-            tokio::time::sleep(Duration::from_millis(self.block_time)).await;
-            self.poll(self.ptr..self.latest).await?;
             self.latest = self.client.get_current_block().await?.height;
+            self.poll(self.ptr..=self.latest).await?;
+
+            // sleep and waiting for new blocks
+            log::info!(
+                "waiting for new blocks for {}ms... current height: {}",
+                self.block_time,
+                self.latest,
+            );
+            tokio::time::sleep(Duration::from_millis(self.block_time)).await;
         }
     }
 }
