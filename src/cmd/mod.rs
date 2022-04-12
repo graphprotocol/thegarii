@@ -16,7 +16,9 @@ mod stream;
 pub enum Command {
     /// Get a block from database or fetch it
     Get(get::Get),
-    /// Dry-run random polling with time estimate
+    /// Poll blocks and print to stdout
+    Console(console::Console),
+    /// Dry-run random polling with time estimating
     Poll(poll::Poll),
     /// Stream blocks from gRPC service
     #[cfg(feature = "stream")]
@@ -35,7 +37,7 @@ pub struct Opt {
 
     /// commands
     #[structopt(subcommand)]
-    pub command: Option<Command>,
+    pub command: Command,
 }
 
 impl Opt {
@@ -51,16 +53,17 @@ impl Opt {
                 .init();
         }
 
+        // extract env
         let env = Env::from_args(opt.env)?;
-        if let Some(cmd) = opt.command {
-            match cmd {
-                Command::Get(get) => get.exec().await?,
-                Command::Poll(poll) => poll.exec(env).await?,
-                #[cfg(feature = "stream")]
-                Command::Stream(stream) => stream.exec().await?,
-            }
-        } else {
-            console::Console::new(env)?.exec().await?;
+        log::debug!("\n{:#?}", env);
+
+        // process commmands
+        match opt.command {
+            Command::Get(get) => get.exec().await?,
+            Command::Poll(poll) => poll.exec(env).await?,
+            Command::Console(console) => console.exec(env).await?,
+            #[cfg(feature = "stream")]
+            Command::Stream(stream) => stream.exec().await?,
         }
 
         Ok(())

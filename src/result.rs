@@ -26,8 +26,8 @@ pub enum Error {
     NoLatestBlockRecord,
     #[error("parse block failed")]
     ParseBlockFailed,
-    #[error("can not write data in read-only mode")]
-    ReadOnlyDatabase,
+    #[error("parse block ptr failed")]
+    ParseBlockPtrFailed,
     #[error(transparent)]
     AddrParseError(#[from] AddrParseError),
     #[error(transparent)]
@@ -52,6 +52,8 @@ pub enum Error {
     #[cfg(feature = "stream")]
     #[error(transparent)]
     Transparent(#[from] tonic::transport::Error),
+    #[error(transparent)]
+    Uint(#[from] uint::FromDecStrErr),
     #[error(transparent)]
     Var(#[from] VarError),
 }
