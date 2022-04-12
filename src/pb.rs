@@ -31,6 +31,11 @@ pub use self::sf::firehose::v1::*;
 
 /// decode string to bytes with base64url
 fn bd(s: &str) -> Result<Vec<u8>> {
+    // parse empty reward addr to vec![]
+    if s == "unclaimed" {
+        return Ok(vec![]);
+    }
+
     base64_url::decode(s).map_err(Into::into)
 }
 
@@ -94,7 +99,7 @@ impl TryFrom<types::Transaction> for Transaction {
     fn try_from(tx: types::Transaction) -> Result<Self> {
         Ok(Self {
             format: tx.format,
-            id: tx.id,
+            id: bd(&tx.id)?,
             last_tx: bd(&tx.last_tx)?,
             owner: bd(&tx.owner)?,
             tags: tx
