@@ -2,7 +2,7 @@
 name = "thegarii"
 authors = ['info@chainsafe.io']
 description = 'thegarii firehose service'
-version = "0.0.4"
+version = "0.0.5"
 license = "GPL-3.0"
 homepage = 'https://github.com/ChainSafe/the-garii'
 repository = 'https://github.com/ChainSafe/the-garii'
@@ -29,13 +29,11 @@ serde = { version = "^1", features = ["derive"] }
 serde_json = "1.0.79"
 structopt = "0.3.26"
 thiserror = "1.0.30"
-tonic = { version = "0.6.2", optional = true }
 tokio = { version = "1", features = ["full"] }
 uint = "0.9"
 
 [features]
 default = [ ]
-stream = [ "tonic" ]
 
 [build-dependencies]
 tonic-build = "0.6.2"

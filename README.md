@@ -49,7 +49,7 @@ OPTIONS:
 
 ## Dev
 
-Build the source code with `cargo build --release --features full`.
+Build the source code with `cargo build --release`.
 
 To config the number of nodes to pull blocks from, define the env variable: `ENDPOINTS`, i.e. `export ENDPOINTS=http://178.62.222.154:1984,http://localhost:1984`.
 The default node is `https://arweave.net/`.

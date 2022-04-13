@@ -6,5 +6,5 @@ fn main() -> Result<()> {
     println!("cargo:rerun-if-changed=./proto");
     tonic_build::configure()
         .format(true)
-        .compile(&["proto/block.proto", "proto/firehose.proto"], &["proto"])
+        .compile(&["proto/type.proto"], &["proto"])
 }

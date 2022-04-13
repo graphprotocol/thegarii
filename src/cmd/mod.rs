@@ -9,9 +9,6 @@ mod console;
 mod get;
 mod poll;
 
-#[cfg(feature = "stream")]
-mod stream;
-
 #[derive(StructOpt, Debug)]
 pub enum Command {
     /// Get a block from database or fetch it
@@ -20,9 +17,6 @@ pub enum Command {
     Console(console::Console),
     /// Dry-run random polling with time estimating
     Poll(poll::Poll),
-    /// Stream blocks from gRPC service
-    #[cfg(feature = "stream")]
-    Stream(stream::Stream),
 }
 
 #[derive(StructOpt, Debug)]
@@ -62,8 +56,6 @@ impl Opt {
             Command::Get(get) => get.exec().await?,
             Command::Poll(poll) => poll.exec(env).await?,
             Command::Console(console) => console.exec(env).await?,
-            #[cfg(feature = "stream")]
-            Command::Stream(stream) => stream.exec().await?,
         }
 
         Ok(())

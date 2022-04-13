@@ -6,8 +6,6 @@ use crate::{
     types::{self, FirehoseBlock, Poa},
 };
 use core::convert::{TryFrom, TryInto};
-use prost_types::Timestamp;
-use std::time::{Duration, SystemTime};
 
 pub mod sf {
     pub mod arweave {
@@ -17,29 +15,18 @@ pub mod sf {
             }
         }
     }
-
-    #[cfg(feature = "stream")]
-    pub mod firehose {
-        pub mod v1 {
-            include!(concat!(env!("OUT_DIR"), "/sf.firehose.v1.rs"));
-        }
-    }
 }
 
 pub use self::sf::arweave::r#type::v1::*;
 
-#[cfg(feature = "stream")]
-pub use self::sf::firehose::v1::*;
-
 /// decode string to bytes with base64url
 fn bd(s: &str) -> Result<Vec<u8>> {
-    base64_url::decode(s).map_err(Into::into)
-}
+    // parse empty reward addr to vec![]
+    if s == "unclaimed" {
+        return Ok(vec![]);
+    }
 
-fn convert_timestamp(t: u64) -> Option<Timestamp> {
-    SystemTime::UNIX_EPOCH
-        .checked_add(Duration::from_secs(t))
-        .map(Into::into)
+    base64_url::decode(s).map_err(Into::into)
 }
 
 impl TryFrom<FirehoseBlock> for Block {
@@ -51,8 +38,8 @@ impl TryFrom<FirehoseBlock> for Block {
             indep_hash: bd(&block.indep_hash)?,
             nonce: bd(&block.nonce)?,
             previous_block: bd(&block.previous_block)?,
-            timestamp: convert_timestamp(block.timestamp),
-            last_retarget: convert_timestamp(block.last_retarget),
+            timestamp: block.timestamp,
+            last_retarget: block.last_retarget,
             diff: block.diff,
             height: block.height,
             hash: bd(&block.hash)?,
@@ -63,7 +50,7 @@ impl TryFrom<FirehoseBlock> for Block {
                 .map(TryInto::try_into)
                 .collect::<Result<Vec<_>>>()?,
             wallet_list: bd(&block.wallet_list)?,
-            reward_addr: block.reward_addr,
+            reward_addr: bd(&block.reward_addr)?,
             tags: block
                 .tags
                 .into_iter()
@@ -102,7 +89,7 @@ impl TryFrom<types::Transaction> for Transaction {
     fn try_from(tx: types::Transaction) -> Result<Self> {
         Ok(Self {
             format: tx.format,
-            id: tx.id,
+            id: bd(&tx.id)?,
             last_tx: bd(&tx.last_tx)?,
             owner: bd(&tx.owner)?,
             tags: tx
@@ -114,7 +101,7 @@ impl TryFrom<types::Transaction> for Transaction {
             quantity: tx.quantity,
             data: bd(&tx.data)?,
             data_size: tx.data_size,
-            data_root: tx.data_root,
+            data_root: bd(&tx.data_root)?,
             signature: bd(&tx.signature)?,
             reward: tx.reward,
         })
