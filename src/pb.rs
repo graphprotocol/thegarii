@@ -15,19 +15,9 @@ pub mod sf {
             }
         }
     }
-
-    #[cfg(feature = "stream")]
-    pub mod firehose {
-        pub mod v1 {
-            include!(concat!(env!("OUT_DIR"), "/sf.firehose.v1.rs"));
-        }
-    }
 }
 
 pub use self::sf::arweave::r#type::v1::*;
-
-#[cfg(feature = "stream")]
-pub use self::sf::firehose::v1::*;
 
 /// decode string to bytes with base64url
 fn bd(s: &str) -> Result<Vec<u8>> {

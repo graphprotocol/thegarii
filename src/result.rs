@@ -44,14 +44,8 @@ pub enum Error {
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
-    #[cfg(feature = "stream")]
-    #[error(transparent)]
-    Status(#[from] tonic::Status),
     #[error(transparent)]
     Timestamp(#[from] prost_types::TimestampOutOfSystemRangeError),
-    #[cfg(feature = "stream")]
-    #[error(transparent)]
-    Transparent(#[from] tonic::transport::Error),
     #[error(transparent)]
     Uint(#[from] uint::FromDecStrErr),
     #[error(transparent)]
