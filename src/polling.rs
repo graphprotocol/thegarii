@@ -94,7 +94,7 @@ impl Polling {
         let mut dup_blocks = vec![];
         for b in blocks.iter() {
             let cumulative_diff =
-                U256::from_dec_str(&b.cumulative_diff.clone().unwrap_or("0".into()))?;
+                U256::from_dec_str(&b.cumulative_diff.clone().unwrap_or_else(|| "0".into()))?;
 
             let block_info = BlockInfo {
                 indep_hash: b.indep_hash.clone(),
@@ -158,7 +158,7 @@ impl Polling {
             // # Safty
             //
             // this will never happen since we have an empty check above
-            let new_ptr = polling.last().ok_or(Error::ParseBlockPtrFailed)?.clone();
+            let new_ptr = *polling.last().ok_or(Error::ParseBlockPtrFailed)?;
             let mut blocks = self.client.poll(polling.into_iter()).await?;
             self.cmp_live_blocks(&mut blocks)?;
             for b in blocks {
