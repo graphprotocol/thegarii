@@ -3,7 +3,7 @@
 #![allow(missing_docs)]
 use crate::{
     result::{Error, Result},
-    types::{self, FirehoseBlock, Poa},
+    types::{self, FirehoseBlock, Poa, U256},
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -11,7 +11,33 @@ pub mod sf {
     pub mod arweave {
         pub mod r#type {
             pub mod v1 {
+                use crate::{types::U256, Error, Result};
+
                 include!(concat!(env!("OUT_DIR"), "/sf.arweave.r#type.v1.rs"));
+
+                impl TryFrom<String> for BigInt {
+                    type Error = Error;
+
+                    fn try_from(s: String) -> Result<Self> {
+                        Ok(Self {
+                            bytes: U256::from_dec_str(&s)?.to_be(),
+                        })
+                    }
+                }
+
+                impl TryFrom<Option<String>> for BigInt {
+                    type Error = Error;
+
+                    fn try_from(os: Option<String>) -> Result<Self> {
+                        if let Some(s) = os {
+                            s.try_into()
+                        } else {
+                            Ok(Self {
+                                bytes: Default::default(),
+                            })
+                        }
+                    }
+                }
             }
         }
     }
@@ -40,10 +66,10 @@ impl TryFrom<FirehoseBlock> for Block {
             previous_block: bd(&block.previous_block)?,
             timestamp: block.timestamp,
             last_retarget: block.last_retarget,
-            diff: block.diff,
+            diff: Some(block.diff.try_into()?),
             height: block.height,
             hash: bd(&block.hash)?,
-            tx_root: block.tx_root.and_then(|r| bd(&r).ok()),
+            tx_root: block.tx_root.unwrap_or_default().try_into()?,
             txs: block
                 .txs
                 .into_iter()
@@ -56,15 +82,13 @@ impl TryFrom<FirehoseBlock> for Block {
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<Result<Vec<_>>>()?,
-            reward_pool: block.reward_pool,
-            weave_size: block.weave_size,
-            block_size: block.block_size,
-            cumulative_diff: block.cumulative_diff,
-            // # TODO
-            //
-            // handle this field which is not a member of arweave block
-            hash_list: vec![],
-            hash_list_merkle: block.hash_list_merkle.and_then(|h| bd(&h).ok()),
+            reward_pool: Some(BigInt {
+                bytes: U256::from_dec_str(&block.reward_pool)?.to_be(),
+            }),
+            weave_size: Some(block.weave_size.try_into()?),
+            block_size: Some(block.block_size.try_into()?),
+            cumulative_diff: Some(block.cumulative_diff.try_into()?),
+            hash_list_merkle: block.hash_list_merkle.unwrap_or_default().try_into()?,
             poa: block.poa.and_then(|p| p.try_into().ok()),
         })
     }
@@ -98,12 +122,12 @@ impl TryFrom<types::Transaction> for Transaction {
                 .map(TryInto::try_into)
                 .collect::<Result<Vec<_>>>()?,
             target: bd(&tx.target)?,
-            quantity: tx.quantity,
+            quantity: Some(tx.quantity.try_into()?),
             data: bd(&tx.data)?,
-            data_size: tx.data_size,
+            data_size: Some(tx.data_size.try_into()?),
             data_root: bd(&tx.data_root)?,
             signature: bd(&tx.signature)?,
-            reward: tx.reward,
+            reward: Some(tx.reward.try_into()?),
         })
     }
 }

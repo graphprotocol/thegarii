@@ -175,6 +175,16 @@ mod uints {
     uint::construct_uint! {
         pub struct U256(4);
     }
+
+    impl U256 {
+        /// to big endian
+        pub fn to_be(&self) -> Vec<u8> {
+            let mut bytes = vec![0; 32];
+            self.to_big_endian(&mut bytes);
+
+            bytes
+        }
+    }
 }
 
 pub use uints::U256;
