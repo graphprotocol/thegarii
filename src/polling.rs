@@ -76,7 +76,7 @@ impl Polling {
     ///
     /// - return the height of fork block if exists
     /// - replace live_blocks field with a sorted stack
-    fn cmp_live_blocks(&mut self, blocks: &mut Vec<FirehoseBlock>) -> Result<()> {
+    fn cmp_live_blocks(&mut self, blocks: &mut [FirehoseBlock]) -> Result<()> {
         if blocks.is_empty() {
             return Ok(());
         }
