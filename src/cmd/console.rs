@@ -6,12 +6,15 @@ use structopt::StructOpt;
 /// console service
 #[derive(Debug, StructOpt)]
 pub struct Console {
-    /// polling start from, if `None`, polling from 0
-    #[structopt(short = "s", long, default_value = "0")]
-    start: u64,
     /// polling end to, if `None`, polling to the latest
     #[structopt(short = "e", long)]
     end: Option<u64>,
+    /// if restarting service on failing automatically
+    #[structopt(short = "f", long)]
+    forever: bool,
+    /// polling start from, if `None`, polling from 0
+    #[structopt(short = "s", long, default_value = "0")]
+    start: u64,
 }
 
 impl Console {
@@ -20,7 +23,7 @@ impl Console {
         log::debug!("\n{:#?}", self);
         log::info!("start polling blocks...");
 
-        let mut polling = Polling::new(self.start, self.end, env).await?;
+        let mut polling = Polling::new(self.end, env, self.forever, self.start).await?;
         polling.start().await?;
 
         Ok(())

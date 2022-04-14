@@ -23,6 +23,7 @@ pub struct Polling {
     client: Client,
     confirms: u64,
     end: Option<u64>,
+    forever: bool,
     latest: u64,
     live_blocks: BTreeMap<u64, BlockInfo>,
     ptr: u64,
@@ -30,7 +31,7 @@ pub struct Polling {
 
 impl Polling {
     /// new polling service
-    pub async fn new(ptr: u64, end: Option<u64>, env: Env) -> Result<Self> {
+    pub async fn new(end: Option<u64>, env: Env, forever: bool, ptr: u64) -> Result<Self> {
         let client = Client::new(env.endpoints, Duration::from_millis(env.timeout), env.retry)?;
         let batch = env.batch_blocks as usize;
 
@@ -40,6 +41,7 @@ impl Polling {
             confirms: env.confirms,
             client,
             end,
+            forever,
             latest: 0,
             live_blocks: Default::default(),
             ptr,
@@ -188,8 +190,14 @@ impl Polling {
 
             // restart when network error occurs
             if let Err(e) = r {
-                log::error!("{:?}, restarting...", e);
-                continue;
+                log::error!("{:?}", e);
+
+                if self.forever {
+                    log::info!("restarting...");
+                    continue;
+                } else {
+                    return Err(e);
+                }
             }
 
             // sleep and waiting for new blocks
