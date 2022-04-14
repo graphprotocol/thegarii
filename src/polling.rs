@@ -155,18 +155,17 @@ impl Polling {
                 blocks.drain(..);
             }
 
-            // # Safty
-            //
-            // this will never happen since we have an empty check above
-            let new_ptr = *polling.last().ok_or(Error::ParseBlockPtrFailed)?;
+            // poll blocks
             let mut blocks = self.client.poll(polling.into_iter()).await?;
             self.cmp_live_blocks(&mut blocks)?;
             for b in blocks {
+                let cur = b.height;
                 Self::dm_log(b)?;
+                // # Safty
+                //
+                // only update ptr after dm_log
+                self.ptr = cur + 1;
             }
-
-            // update ptr
-            self.ptr = new_ptr + 1;
         }
 
         Ok(())
@@ -181,8 +180,17 @@ impl Polling {
         }
 
         loop {
-            self.latest = self.client.get_current_block().await?.height;
-            self.poll(self.ptr..=self.latest).await?;
+            let r: Result<()> = {
+                self.latest = self.client.get_current_block().await?.height;
+                self.poll(self.ptr..=self.latest).await?;
+                Ok(())
+            };
+
+            // restart when network error occurs
+            if let Err(e) = r {
+                log::error!("{:?}, restarting...", e);
+                continue;
+            }
 
             // sleep and waiting for new blocks
             log::info!(
