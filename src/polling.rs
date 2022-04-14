@@ -155,7 +155,7 @@ impl Polling {
                 blocks.drain(..);
             }
 
-            // poll blocks
+            // poll blocks and dm logging
             let mut blocks = self.client.poll(polling.into_iter()).await?;
             self.cmp_live_blocks(&mut blocks)?;
             for b in blocks {
