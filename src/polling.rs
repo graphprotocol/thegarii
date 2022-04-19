@@ -173,6 +173,13 @@ impl Polling {
         Ok(())
     }
 
+    /// poll to head
+    async fn track_head(&mut self) -> Result<()> {
+        self.latest = self.client.get_current_block().await?.height;
+        self.poll(self.ptr..=self.latest).await?;
+        Ok(())
+    }
+
     /// start polling service
     pub async fn start(&mut self) -> Result<()> {
         if let Some(end) = self.end {
@@ -182,14 +189,8 @@ impl Polling {
         }
 
         loop {
-            let r: Result<()> = {
-                self.latest = self.client.get_current_block().await?.height;
-                self.poll(self.ptr..=self.latest).await?;
-                Ok(())
-            };
-
             // restart when network error occurs
-            if let Err(e) = r {
+            if let Err(e) = self.track_head().await {
                 log::error!("{:?}", e);
 
                 if self.forever {
