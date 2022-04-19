@@ -24,7 +24,11 @@ impl Console {
         log::info!("start polling blocks...");
 
         let mut polling = Polling::new(self.end, env, self.forever, self.start).await?;
-        polling.start().await?;
+
+        if let Err(e) = polling.start().await {
+            log::error!("{:?}", e);
+            return Err(e);
+        }
 
         Ok(())
     }
