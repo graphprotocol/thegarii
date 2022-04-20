@@ -112,7 +112,7 @@ impl TryFrom<types::Transaction> for Transaction {
 
     fn try_from(tx: types::Transaction) -> Result<Self> {
         Ok(Self {
-            format: tx.format,
+            format: tx.format.unwrap_or_default(),
             id: bd(&tx.id)?,
             last_tx: bd(&tx.last_tx)?,
             owner: bd(&tx.owner)?,
