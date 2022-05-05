@@ -3,7 +3,7 @@
 
 //! App envorionments
 use crate::Result;
-use std::env;
+use std::{env, path::PathBuf};
 use structopt::StructOpt;
 
 const BLOCK_TIME: &str = "BLOCK_TIME";
@@ -18,6 +18,8 @@ const CONFIRMS: &str = "CONFIRMS";
 const DEFAULT_CONFIRMS: u64 = 20;
 const TIMEOUT: &str = "TIMEOUT";
 const DEFAULT_TIMEOUT: u64 = 120_000;
+const PTR_FILE: &str = "PTR_FILE";
+const DEFAULT_PTR_FILE: &str = "./arweave.ptr";
 
 /// env arguments for CLI
 #[derive(Debug, StructOpt)]
@@ -34,6 +36,9 @@ pub struct EnvArguments {
     /// client endpoints
     #[structopt(short, long, default_value = "https://arweave.net/")]
     pub endpoints: Vec<String>,
+    /// block pointer path
+    #[structopt(short, long, default_value = "./arweave.ptr")]
+    pub ptr_file: PathBuf,
     /// retry times when failed on http requests
     #[structopt(short, long, default_value = "10")]
     pub retry: u8,
@@ -53,6 +58,8 @@ pub struct Env {
     pub confirms: u64,
     /// client endpoints
     pub endpoints: Vec<String>,
+    /// block pointer path
+    pub ptr_file: PathBuf,
     /// retry times when failed on http requests
     pub retry: u8,
     /// timeout of http requests
@@ -83,6 +90,14 @@ impl Env {
         Ok(match env::var(BATCH_BLOCKS) {
             Ok(blocks) => blocks.parse()?,
             Err(_) => DEFAULT_BATCH_BLOCKS,
+        })
+    }
+
+    /// get $PTR_FILE from env or use DEFAULT_PTR_FILE
+    pub fn ptr_file() -> Result<PathBuf> {
+        Ok(match env::var(PTR_FILE) {
+            Ok(path) => path.into(),
+            Err(_) => DEFAULT_PTR_FILE.into(),
         })
     }
 
@@ -117,6 +132,7 @@ impl Env {
             block_time: Self::block_time()?,
             confirms: Self::confirms()?,
             endpoints: Self::endpoints()?,
+            ptr_file: Self::ptr_file()?,
             retry: Self::retry()?,
             timeout: Self::timeout()?,
         })
@@ -133,6 +149,7 @@ impl Env {
             } else {
                 args.endpoints
             },
+            ptr_file: args.ptr_file,
             retry: args.retry,
             timeout: args.timeout,
         })

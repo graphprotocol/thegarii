@@ -1,6 +1,7 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{polling::Polling, Env, Result};
+use std::fs;
 use structopt::StructOpt;
 
 /// console service
@@ -12,18 +13,28 @@ pub struct Console {
     /// if restarting service on failing automatically
     #[structopt(short = "f", long)]
     forever: bool,
-    /// polling start from, if `None`, polling from 0
-    #[structopt(short = "s", long, default_value = "0")]
-    start: u64,
+    /// polling start from, if `None`, thegarii will poll from the block height
+    /// stored in $PTR_FILE or 0
+    #[structopt(short = "s", long)]
+    start: Option<u64>,
 }
 
 impl Console {
     /// run as service
     pub async fn exec(&self, env: Env) -> Result<()> {
         log::debug!("\n{:#?}", self);
-        log::info!("start polling blocks...");
+        let ptr = if let Some(start) = self.start {
+            start
+        } else {
+            fs::read_to_string(&env.ptr_file)
+                .ok()
+                .map(|s| s.parse().ok())
+                .flatten()
+                .unwrap_or(0)
+        };
 
-        let mut polling = Polling::new(self.end, env, self.forever, self.start).await?;
+        log::info!("start polling blocks from {}...", ptr);
+        let mut polling = Polling::new(self.end, env, self.forever, ptr).await?;
 
         if let Err(e) = polling.start().await {
             log::error!("{:?}", e);
