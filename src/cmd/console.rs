@@ -28,8 +28,7 @@ impl Console {
         } else {
             fs::read_to_string(&env.ptr_file)
                 .ok()
-                .map(|s| s.parse().ok())
-                .flatten()
+                .and_then(|s| s.parse().ok())
                 .unwrap_or(0)
         };
 
