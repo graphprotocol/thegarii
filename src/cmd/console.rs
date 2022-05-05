@@ -23,14 +23,10 @@ impl Console {
     /// run as service
     pub async fn exec(&self, env: Env) -> Result<()> {
         log::debug!("\n{:#?}", self);
-        let ptr = if let Some(start) = self.start {
-            start
-        } else {
-            fs::read_to_string(&env.ptr_file)
-                .ok()
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(0)
-        };
+        let ptr = fs::read_to_string(&env.ptr_file)
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or_else(|| self.start.unwrap_or(0));
 
         log::info!("start polling blocks from {}...", ptr);
         let mut polling = Polling::new(self.end, env, self.forever, ptr).await?;
