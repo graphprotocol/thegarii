@@ -8,7 +8,7 @@ use crate::{
     Error, Result,
 };
 use prost::Message;
-use std::{collections::BTreeMap, time::Duration};
+use std::{collections::BTreeMap, fs, path::PathBuf, time::Duration};
 
 #[derive(Debug, Clone)]
 struct BlockInfo {
@@ -27,6 +27,7 @@ pub struct Polling {
     latest: u64,
     live_blocks: BTreeMap<u64, BlockInfo>,
     ptr: u64,
+    ptr_file: PathBuf,
 }
 
 impl Polling {
@@ -45,6 +46,7 @@ impl Polling {
             latest: 0,
             live_blocks: Default::default(),
             ptr,
+            ptr_file: env.ptr_file,
         })
     }
 
@@ -163,10 +165,16 @@ impl Polling {
             for b in blocks {
                 let cur = b.height;
                 Self::dm_log(b)?;
+
                 // # Safty
                 //
                 // only update ptr after dm_log
+                //
+                // # NOTE
+                //
+                // Stores string for easy debugging
                 self.ptr = cur + 1;
+                fs::write(&self.ptr_file, self.ptr.to_string())?;
             }
         }
 
