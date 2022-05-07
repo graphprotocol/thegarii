@@ -1,26 +1,13 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
-use crate::{
-    client::Client,
-    env::Env,
-    pb::Block,
-    types::{FirehoseBlock, U256},
-    Error, Result,
-};
+use crate::{client::Client, env::Env, pb::Block, Error, Result};
 use anyhow::Context;
+use futures::stream;
+use futures::StreamExt;
+use futures::TryFutureExt;
 use prost::Message;
-use std::{
-    collections::BTreeMap,
-    fs,
-    path::{Path, PathBuf},
-    time::Duration,
-};
-
-#[derive(Debug, Clone)]
-struct BlockInfo {
-    pub indep_hash: String,
-    pub cumulative_diff: U256,
-}
+use std::path::{Path, PathBuf};
+use std::{fs, time::Duration};
 
 /// polling service
 pub struct Polling {
@@ -32,9 +19,8 @@ pub struct Polling {
     end: Option<u64>,
     forever: bool,
     latest: u64,
-    live_blocks: BTreeMap<u64, BlockInfo>,
     ptr: u64,
-    ptr_file: PathBuf,
+    quiet: bool,
 }
 
 impl Polling {
@@ -44,9 +30,14 @@ impl Polling {
         end: Option<u64>,
         env: Env,
         forever: bool,
-        ptr: Option<u64>,
+        ptr: Option<String>,
+        quiet: bool,
     ) -> Result<Self> {
-        let client = Client::new(env.endpoints, Duration::from_millis(env.timeout), env.retry)?;
+        let client = Client::new(
+            env.endpoints.clone(),
+            Duration::from_millis(env.timeout),
+            env.retry,
+        )?;
         let batch = env.batch_blocks as usize;
 
         fs::create_dir_all(&data_directory).context(
@@ -56,9 +47,7 @@ impl Polling {
         let last_processed_block_path =
             Path::new(&data_directory).join("latest_block_processed.txt");
 
-        let ptr = Self::determine_start_ptr(&last_processed_block_path, ptr)?;
-
-        Ok(Self {
+        let mut poller = Self {
             last_processed_block_path: Box::new(last_processed_block_path),
             batch,
             block_time: env.block_time,
@@ -67,184 +56,143 @@ impl Polling {
             end,
             forever,
             latest: 0,
-            live_blocks: Default::default(),
-            ptr,
-            ptr_file: env.ptr_file,
-        })
+            ptr: 0,
+            quiet: quiet,
+        };
+
+        poller.initialize_start_ptr(ptr).await?;
+
+        Ok(poller)
     }
 
-    fn determine_start_ptr(
-        last_processed_block_path: &PathBuf,
-        start_block_flag: Option<u64>,
-    ) -> Result<u64> {
-        match last_processed_block_path.exists() {
-            true => {
-                let content: String = fs::read_to_string(last_processed_block_path).context(
-                    format_args!(
-                        "unable to read content of last block processsed file {:?}",
-                        last_processed_block_path,
-                    )
-                    .to_string(),
-                )?;
+    async fn initialize_start_ptr(&mut self, start_block_flag: Option<String>) -> Result<()> {
+        self.ptr = match self.last_processed_block_path.exists() {
+            true => self.start_ptr_from_state().await?,
+            false => match start_block_flag {
+                Some(value) if value == "live" => self.start_ptr_from_last_irreversible().await?,
+                Some(start) => self.start_ptr_from_flag_value(&start).await?,
+                _ => {
+                    log::info!(
+                            "no previous latest block processed file {:?} exists, starting from block 0",
+                            self.last_processed_block_path
+                        );
 
-                let value = content.parse::<u64>().context(
-                    format_args!("content {} is not a valid u64 string value", &content)
-                        .to_string(),
-                )?;
+                    0
+                }
+            },
+        };
 
+        Ok(())
+    }
+
+    async fn start_ptr_from_state(&self) -> Result<u64> {
+        let content: String = tokio::fs::read_to_string(self.last_processed_block_path.as_ref())
+            .await
+            .context(
+                format_args!(
+                    "unable to read content of last block processsed file {:?}",
+                    self.last_processed_block_path,
+                )
+                .to_string(),
+            )?;
+
+        content.parse::<u64>()
+            .context(format_args!("content {} is not a valid u64 string value", &content).to_string(),
+        ).map(|value|  {
+            log::info!(
+                "start block retrieved from last processed block state file, starting from block {}",
+                value
+            );
+
+            value
+        }).map_err(Into::into)
+    }
+
+    async fn start_ptr_from_last_irreversible(&self) -> Result<u64> {
+        log::info!("user requested 'live' block, retrieving it from endpoint");
+
+        self.latest_irreversible_block_num()
+            .await
+            .and_then(|live_block| {
                 log::info!(
-                    "start block retrieved from last processed block state file, starting from block {}",
+                    "start block explicitely provided, starting from live block {}",
+                    live_block
+                );
+
+                Ok(live_block)
+            })
+    }
+
+    async fn start_ptr_from_flag_value(&self, value: &String) -> Result<u64> {
+        value
+            .parse::<u64>()
+            .and_then(|value| {
+                log::info!(
+                    "start block explicitely provided, starting from block {}",
                     value
                 );
 
                 Ok(value)
-            }
-            false => {
-                if let Some(start) = start_block_flag {
-                    log::info!(
-                        "start block explicitely provided, starting from block {}",
-                        start
-                    );
-
-                    Ok(start)
-                } else {
-                    log::info!(
-                        "no previous latest block processed file {:?} exists, starting from block 0",
-                        &last_processed_block_path
-                    );
-
-                    Ok(0)
-                }
-            }
-        }
+            })
+            .context(format_args!("start {} is not a valid u64 string value", value).to_string())
+            .map_err(Into::into)
     }
 
     /// dm log to stdout
     ///
     /// DMLOG BLOCK <HEIGHT> <ENCODED>
-    fn dm_log(b: FirehoseBlock) -> Result<()> {
-        let height = b.height;
-        let proto: Block = b.try_into()?;
+    fn dm_log(&self, b: &(u64, Vec<u8>)) -> Result<()> {
+        let height = b.0;
 
-        println!(
-            "DMLOG BLOCK {} {}",
-            height,
-            proto
-                .encode_to_vec()
-                .into_iter()
-                .map(|b| format!("{:02x}", b))
-                .reduce(|mut r, c| {
-                    r.push_str(&c);
-                    r
-                })
-                .ok_or(Error::ParseBlockFailed)?
-        );
-
-        Ok(())
-    }
-
-    /// compare blocks with current live blocks
-    ///
-    /// # TODO
-    ///
-    /// - return the height of fork block if exists
-    /// - replace live_blocks field with a sorted stack
-    fn cmp_live_blocks(&mut self, blocks: &mut [FirehoseBlock]) -> Result<()> {
-        if blocks.is_empty() {
-            return Ok(());
+        if self.quiet {
+            println!("DMLOG BLOCK {} <quiet-mode>", height);
+        } else {
+            println!("DMLOG BLOCK {} {}", height, hex::encode(&b.1));
         }
 
-        // # Safty
-        //
-        // this will never happen since we have an empty check above
-        let last = blocks.last().ok_or(Error::ParseBlockPtrFailed)?.clone();
-        if last.height + self.confirms < self.latest {
-            return Ok(());
-        }
-
-        // - detect if have fork
-        // - add new live blocks
-        let mut dup_blocks = vec![];
-        for b in blocks.iter() {
-            let cumulative_diff =
-                U256::from_dec_str(&b.cumulative_diff.clone().unwrap_or_else(|| "0".into()))?;
-
-            let block_info = BlockInfo {
-                indep_hash: b.indep_hash.clone(),
-                cumulative_diff,
-            };
-
-            // detect fork
-            if let Some(value) = self.live_blocks.get(&b.height) {
-                // - comparing if have different `indep_hash`
-                // - comparing if the block belongs to a longer chain
-                if *value.indep_hash != b.indep_hash && cumulative_diff > value.cumulative_diff {
-                    // TODO
-                    //
-                    // return fork number
-                } else {
-                    dup_blocks.push(b.height);
-                    continue;
-                }
-            }
-
-            // update live blocks
-            if b.height + self.confirms > self.latest {
-                self.live_blocks.insert(b.height, block_info);
-            }
-        }
-
-        // remove emitted live blocks
-        // blocks.retain(|b| !dup_blocks.contains(&b.height));
-
-        // trim irreversible blocks
-        self.live_blocks = self
-            .live_blocks
-            .clone()
-            .into_iter()
-            .filter(|(h, _)| *h + self.confirms > self.latest)
-            .collect();
-
-        log::trace!(
-            "live blocks: {:?}",
-            self.live_blocks.keys().into_iter().collect::<Vec<&u64>>()
-        );
         Ok(())
     }
 
     /// poll blocks and write to stdout
-    async fn poll(&mut self, blocks: impl IntoIterator<Item = u64>) -> Result<()> {
-        let mut blocks = blocks.into_iter().collect::<Vec<u64>>();
-
+    async fn poll(&mut self, blocks: Vec<u64>) -> Result<()> {
         if blocks.is_empty() {
+            log::info!("nothing to poll, blocks are empty");
             return Ok(());
         }
 
-        while !blocks.is_empty() {
-            let mut polling = blocks.clone();
-            if polling.len() > self.batch {
-                blocks = polling.split_off(self.batch);
-            } else {
-                blocks.drain(..);
-            }
+        log::info!(
+            "polling from {} to {}",
+            blocks.first().expect("non-empty"),
+            blocks.last().expect("non-empty")
+        );
 
-            // poll blocks and dm logging
-            let mut blocks = self.client.poll(polling.into_iter()).await?;
-            self.cmp_live_blocks(&mut blocks)?;
-            for b in blocks {
-                let cur = b.height;
-                Self::dm_log(b)?;
+        let mut tasks = stream::iter(blocks.into_iter().map(|block| {
+            self.client
+                .get_firehose_block_by_height(block)
+                .and_then(|block| async {
+                    let height = block.height;
+                    let proto: Block = block.try_into()?;
 
-                // # Safty
-                //
-                // only update ptr after dm_log
-                //
-                // # NOTE
-                //
-                // Stores string for easy debugging
-                self.ptr = cur + 1;
+                    Ok((height, proto.encode_to_vec()))
+                })
+        }))
+        .buffered(self.batch);
 
-                self.write_ptr().await?;
+        while let Some(item) = tasks.next().await {
+            let block = item?;
+
+            self.dm_log(&block)?;
+            // # Safty
+            //
+            // only update ptr after dm_log
+            self.ptr = block.0 + 1;
+
+            self.write_ptr().await?;
+
+            if let Some(end) = self.end {
+                if block.0 == end {
+                    return Err(Error::StopBlockReached);
+                }
             }
         }
 
@@ -267,41 +215,59 @@ impl Polling {
         Ok(())
     }
 
+    async fn latest_irreversible_block_num(&self) -> Result<u64> {
+        let head_block = self.client.get_current_block().await?.height;
+        if head_block < self.confirms {
+            return Ok(head_block);
+        }
+
+        Ok(head_block - self.confirms)
+    }
+
     /// poll to head
     async fn track_head(&mut self) -> Result<()> {
-        self.latest = self.client.get_current_block().await?.height;
-        self.poll(self.ptr..=self.latest).await?;
+        log::info!("fetching last irreversible block");
+        self.latest = self.latest_irreversible_block_num().await?;
+
+        log::info!("tracking head from {} to {}", self.ptr, self.latest);
+        self.poll((self.ptr..=self.latest).collect()).await?;
         Ok(())
     }
 
     /// start polling service
     pub async fn start(&mut self) -> Result<()> {
-        if let Some(end) = self.end {
-            self.poll(self.ptr..=end).await?;
-
-            return Ok(());
-        }
-
         loop {
             // restart when network error occurs
-            if let Err(e) = self.track_head().await {
-                log::error!("{:?}", e);
-
-                if self.forever {
-                    log::info!("restarting...");
-                    continue;
-                } else {
-                    return Err(e);
+            let result = self.track_head().await;
+            match result {
+                Err(Error::StopBlockReached) => {
+                    log::info!(
+                        "stop block {} reached, stopping poller",
+                        self.end.expect("stop block reached, must be set")
+                    );
+                    return Ok(());
                 }
-            }
 
-            // sleep and waiting for new blocks
-            log::info!(
-                "waiting for new blocks for {}ms... current height: {}",
-                self.block_time,
-                self.latest,
-            );
-            tokio::time::sleep(Duration::from_millis(self.block_time)).await;
+                Err(e) => {
+                    log::error!("{:?}", e);
+
+                    if self.forever {
+                        log::info!("restarting...");
+                        continue;
+                    } else {
+                        return Err(e);
+                    }
+                }
+
+                _ => {
+                    log::info!(
+                        "sleeping {}ms before checking for new blocks (last irrerversible block {})",
+                        self.block_time,
+                        self.latest,
+                    );
+                    tokio::time::sleep(Duration::from_millis(self.block_time)).await;
+                }
+            };
         }
     }
 }

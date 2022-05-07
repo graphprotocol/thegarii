@@ -1214,6 +1214,7 @@ dependencies = [
  "dirs",
  "env_logger",
  "futures",
+ "hex",
  "log",
  "prost",
  "prost-types",

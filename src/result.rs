@@ -28,6 +28,8 @@ pub enum Error {
     ParseBlockFailed,
     #[error("parse block ptr failed")]
     ParseBlockPtrFailed,
+    #[error("stop block reached")]
+    StopBlockReached,
     #[error(transparent)]
     AddrParseError(#[from] AddrParseError),
     #[error(transparent)]

@@ -12,23 +12,30 @@ pub struct Console {
     /// if restarting service on failing automatically
     #[structopt(short = "f", long)]
     forever: bool,
-    /// polling start from, if `None`, polling from 0
+    /// If never processed block before, start from -s if defined (use 'live' to start from "head" block)
     #[structopt(short = "s", long)]
-    start: Option<u64>,
+    start: Option<String>,
     /// data directory where to store latest block fully processed
     #[structopt(short = "d", long, default_value = "./thegarii")]
     data_directory: String,
+    /// reduce deep mind block output by just showing the length (not good for production!)
+    #[structopt(short = "q", long)]
+    quiet: bool,
 }
 
 impl Console {
     /// run as service
     pub async fn exec(&self, env: Env) -> Result<()> {
+        log::debug!("\n{:?}", self);
+        log::info!("start polling blocks...");
+
         let mut polling = Polling::new(
             self.data_directory.to_string(),
             self.end,
             env,
             self.forever,
-            self.start,
+            self.start.clone(),
+            self.quiet,
         )
         .await?;
 
