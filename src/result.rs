@@ -50,6 +50,8 @@ pub enum Error {
     Uint(#[from] uint::FromDecStrErr),
     #[error(transparent)]
     Var(#[from] VarError),
+    #[error(transparent)]
+    Generic(#[from] anyhow::Error),
 }
 
 /// result type

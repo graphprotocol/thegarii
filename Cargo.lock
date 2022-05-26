@@ -1207,6 +1207,7 @@ dependencies = [
 name = "thegarii"
 version = "0.0.9"
 dependencies = [
+ "anyhow",
  "async-trait",
  "base64-url",
  "bincode",

@@ -7,8 +7,14 @@ use crate::{
     types::{FirehoseBlock, U256},
     Error, Result,
 };
+use anyhow::Context;
 use prost::Message;
-use std::{collections::BTreeMap, fs, path::PathBuf, time::Duration};
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 #[derive(Debug, Clone)]
 struct BlockInfo {
@@ -18,6 +24,7 @@ struct BlockInfo {
 
 /// polling service
 pub struct Polling {
+    last_processed_block_path: Box<PathBuf>,
     batch: usize,
     block_time: u64,
     client: Client,
@@ -32,11 +39,27 @@ pub struct Polling {
 
 impl Polling {
     /// new polling service
-    pub async fn new(end: Option<u64>, env: Env, forever: bool, ptr: u64) -> Result<Self> {
+    pub async fn new(
+        data_directory: String,
+        end: Option<u64>,
+        env: Env,
+        forever: bool,
+        ptr: Option<u64>,
+    ) -> Result<Self> {
         let client = Client::new(env.endpoints, Duration::from_millis(env.timeout), env.retry)?;
         let batch = env.batch_blocks as usize;
 
+        fs::create_dir_all(&data_directory).context(
+            format_args!("unable to create data directory {}", &data_directory).to_string(),
+        )?;
+
+        let last_processed_block_path =
+            Path::new(&data_directory).join("latest_block_processed.txt");
+
+        let ptr = Self::determine_start_ptr(&last_processed_block_path, ptr)?;
+
         Ok(Self {
+            last_processed_block_path: Box::new(last_processed_block_path),
             batch,
             block_time: env.block_time,
             confirms: env.confirms,
@@ -48,6 +71,52 @@ impl Polling {
             ptr,
             ptr_file: env.ptr_file,
         })
+    }
+
+    fn determine_start_ptr(
+        last_processed_block_path: &PathBuf,
+        start_block_flag: Option<u64>,
+    ) -> Result<u64> {
+        match last_processed_block_path.exists() {
+            true => {
+                let content: String = fs::read_to_string(last_processed_block_path).context(
+                    format_args!(
+                        "unable to read content of last block processsed file {:?}",
+                        last_processed_block_path,
+                    )
+                    .to_string(),
+                )?;
+
+                let value = content.parse::<u64>().context(
+                    format_args!("content {} is not a valid u64 string value", &content)
+                        .to_string(),
+                )?;
+
+                log::info!(
+                    "start block retrieved from last processed block state file, starting from block {}",
+                    value
+                );
+
+                Ok(value)
+            }
+            false => {
+                if let Some(start) = start_block_flag {
+                    log::info!(
+                        "start block explicitely provided, starting from block {}",
+                        start
+                    );
+
+                    Ok(start)
+                } else {
+                    log::info!(
+                        "no previous latest block processed file {:?} exists, starting from block 0",
+                        &last_processed_block_path
+                    );
+
+                    Ok(0)
+                }
+            }
+        }
     }
 
     /// dm log to stdout
@@ -174,9 +243,26 @@ impl Polling {
                 //
                 // Stores string for easy debugging
                 self.ptr = cur + 1;
-                fs::write(&self.ptr_file, self.ptr.to_string())?;
+
+                self.write_ptr().await?;
             }
         }
+
+        Ok(())
+    }
+
+    async fn write_ptr(&self) -> Result<()> {
+        let ptr_string = self.ptr.to_string();
+
+        tokio::fs::write(self.last_processed_block_path.as_ref(), &ptr_string)
+            .await
+            .context(
+                format_args!(
+                    "unable to write last processed block ptr to {:?}",
+                    &self.last_processed_block_path,
+                )
+                .to_string(),
+            )?;
 
         Ok(())
     }
