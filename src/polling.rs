@@ -138,16 +138,16 @@ impl Polling {
             .map_err(Into::into)
     }
 
-    /// dm log to stdout
+    /// Firehose log to stdout
     ///
-    /// DMLOG BLOCK <HEIGHT> <ENCODED>
-    fn dm_log(&self, b: &(u64, Vec<u8>)) -> Result<()> {
+    /// FIRE BLOCK <HEIGHT> <ENCODED>
+    fn firehose_log(&self, b: &(u64, Vec<u8>)) -> Result<()> {
         let height = b.0;
 
         if self.quiet {
-            println!("DMLOG BLOCK {} <quiet-mode>", height);
+            println!("FIRE BLOCK {} <quiet-mode>", height);
         } else {
-            println!("DMLOG BLOCK {} {}", height, hex::encode(&b.1));
+            println!("FIRE BLOCK {} {}", height, hex::encode(&b.1));
         }
 
         Ok(())
@@ -181,10 +181,10 @@ impl Polling {
         while let Some(item) = tasks.next().await {
             let block = item?;
 
-            self.dm_log(&block)?;
+            self.firehose_log(&block)?;
             // # Safty
             //
-            // only update ptr after dm_log
+            // only update ptr after firehose_log has been emitted
             self.ptr = block.0 + 1;
 
             self.write_ptr().await?;

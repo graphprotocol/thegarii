@@ -18,7 +18,7 @@ pub struct Console {
     /// data directory where to store latest block fully processed
     #[structopt(short = "d", long, default_value = "./thegarii")]
     data_directory: String,
-    /// reduce deep mind block output by just showing the length (not good for production!)
+    /// reduce Firehose logs block output by just showing the length (not good for production!)
     #[structopt(short = "q", long)]
     quiet: bool,
 }
