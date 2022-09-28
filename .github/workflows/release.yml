@@ -93,17 +93,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      - name: Generate Change Log
-        id: changelog
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        run: |
-          chmod 755 ./.github/generate_change_log.sh
-          CHANGELOG=$(./.github/generate_change_log.sh ${{ env.RELEASE_VERSION }})
-
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          echo "$CHANGELOG" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
       - name: Download All Artifacts
         id: download-artifacts
         uses: actions/download-artifact@v2
@@ -129,6 +118,17 @@ jobs:
           download_path="${{steps.download-artifacts.outputs.download-path}}"
           chmod +x "${download_path}/linux-x86_64-unknown-linux-gnu/thegarii"
           mv "$download_path/linux-x86_64-unknown-linux-gnu/thegarii" "$download_path/thegarii-x86_64-unknown-linux-gnu"
+
+      - name: Generate Change Log
+        id: changelog
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          chmod 755 ./.github/generate_change_log.sh
+          CHANGELOG=$(./.github/generate_change_log.sh "${{ env.RELEASE_VERSION }}" "${{steps.download-artifacts.outputs.download-path}}")
+
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Log in to the Container registry
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9

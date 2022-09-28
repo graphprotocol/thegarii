@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
-
 main() {
+  version="$1"
+  binaries_dir="$2"
+
   change_log_file="./CHANGELOG.md"
-  version="## $@"
+  version=`printf "## $version" | tr -d 'v'`
   version_prefix="## [0-9]{1,2}\."
   start=0
   CHANGE_LOG=""
@@ -19,7 +21,8 @@ main() {
       CHANGE_LOG+="$line\n"
     fi
   done < ${change_log_file}
-  LINUX_X86_64_BIN_SUM="$(checksum ./linux-x86_64-unknown-linux-gnu)"
+
+  LINUX_X86_64_BIN_SUM="$(checksum "$binaries_dir/thegarii-x86_64-unknown-linux-gnu")"
 
   OUTPUT="$(cat <<-END
 ## Changelog
@@ -27,7 +30,7 @@ ${CHANGE_LOG}
 ## Checksums
 |Assets | Checksum (sha256)|
 |-|-|
-|thegarii-linux-x86-64 | ${LINUX_X86_64_BIN_SUM}|
+|thegarii-x86_64-unknown-linux-gnu | ${LINUX_X86_64_BIN_SUM}|
 END
 )"
 

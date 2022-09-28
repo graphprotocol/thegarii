@@ -1,3 +1,7 @@
+## 0.2.1
+
+- Fixed up automatic changelog generation.
+
 ## 0.2.0
 
 - Re-branded under Firehose (remove all usage of `deep mind`, `DMLOG` and other similar names).
