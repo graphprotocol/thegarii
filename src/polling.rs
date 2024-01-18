@@ -1,10 +1,12 @@
+use crate::types::FirehoseBlock;
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{client::Client, env::Env, pb::Block, Error, Result};
 use anyhow::Context;
+use base64::{engine::general_purpose, Engine as _};
 use futures::stream;
 use futures::StreamExt;
-use futures::TryFutureExt;
+
 use prost::Message;
 use std::path::{Path, PathBuf};
 use std::{fs, time::Duration};
@@ -140,14 +142,43 @@ impl Polling {
 
     /// Firehose log to stdout
     ///
-    /// FIRE BLOCK <HEIGHT> <ENCODED>
-    fn firehose_log(&self, b: &(u64, Vec<u8>)) -> Result<()> {
-        let height = b.0;
+    /// FIRE BLOCK <BLOCK_NUM> <BLOCK_HASH> <PARENT_NUM> <PARENT_HASH> <LIB> <TIMESTAMP> <ENCODED>
+    fn firehose_log(&self, b: FirehoseBlock) -> Result<()> {
+        let block_num = b.height;
+        let block_hash = b.indep_hash.clone();
+
+        let parent_num: u64;
+        if b.previous_block.is_empty() {
+            parent_num = 0;
+        } else {
+            parent_num = b.height - 1;
+        }
+
+        let parent_hash = b.previous_block.clone();
+
+        let lib: u64;
+        if b.height > self.confirms {
+            lib = b.height - self.confirms;
+        } else {
+            lib = 0;
+        }
+
+        let timestamp = b.timestamp;
+        let encoded: Block = b.try_into()?;
 
         if self.quiet {
-            println!("FIRE BLOCK {} <quiet-mode>", height);
+            println!("FIRE BLOCK {} <quiet-mode>", block_num);
         } else {
-            println!("FIRE BLOCK {} {}", height, hex::encode(&b.1));
+            println!(
+                "FIRE BLOCK {} {} {} {} {} {} {}",
+                block_num,
+                block_hash,
+                parent_num,
+                parent_hash,
+                lib,
+                timestamp,
+                general_purpose::STANDARD.encode(&encoded.encode_to_vec())
+            );
         }
 
         Ok(())
@@ -166,31 +197,26 @@ impl Polling {
             blocks.last().expect("non-empty")
         );
 
-        let mut tasks = stream::iter(blocks.into_iter().map(|block| {
-            self.client
-                .get_firehose_block_by_height(block)
-                .and_then(|block| async {
-                    let height = block.height;
-                    let proto: Block = block.try_into()?;
-
-                    Ok((height, proto.encode_to_vec()))
-                })
-        }))
+        let mut tasks = stream::iter(
+            blocks
+                .into_iter()
+                .map(|block| self.client.get_firehose_block_by_height(block)),
+        )
         .buffered(self.batch);
 
         while let Some(item) = tasks.next().await {
             let block = item?;
 
-            self.firehose_log(&block)?;
+            self.firehose_log(block.clone())?;
             // # Safty
             //
             // only update ptr after firehose_log has been emitted
-            self.ptr = block.0 + 1;
+            self.ptr = block.height + 1;
 
             self.write_ptr().await?;
 
             if let Some(end) = self.end {
-                if block.0 == end {
+                if block.height == end {
                     return Err(Error::StopBlockReached);
                 }
             }
