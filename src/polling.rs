@@ -140,6 +140,13 @@ impl Polling {
             .map_err(Into::into)
     }
 
+    /// Firehose init log to stdout
+    ///
+    /// FIRE INIT <VERSION> <BLOCK_TYPE_URL>
+    fn firehose_init(&self) {
+        println!("FIRE INIT 1.0.0 sf.arweave.type.v1");
+    }
+
     /// Firehose log to stdout
     ///
     /// FIRE BLOCK <BLOCK_NUM> <BLOCK_HASH> <PARENT_NUM> <PARENT_HASH> <LIB> <TIMESTAMP> <ENCODED>
@@ -262,6 +269,8 @@ impl Polling {
 
     /// start polling service
     pub async fn start(&mut self) -> Result<()> {
+        self.firehose_init();
+
         loop {
             // restart when network error occurs
             let result = self.track_head().await;
