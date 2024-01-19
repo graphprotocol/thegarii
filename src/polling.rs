@@ -3,7 +3,6 @@ use crate::types::FirehoseBlock;
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{client::Client, env::Env, pb::Block, Error, Result};
 use anyhow::Context;
-use base64::{engine::general_purpose, Engine as _};
 use futures::stream;
 use futures::StreamExt;
 
@@ -153,24 +152,23 @@ impl Polling {
     fn firehose_log(&self, b: FirehoseBlock) -> Result<()> {
         let block_num = b.height;
         let block_hash = b.indep_hash.clone();
+        let parent_hash = b.previous_block.clone();
+        let timestamp = b.timestamp;
 
         let parent_num: u64;
         if b.previous_block.is_empty() {
             parent_num = 0;
         } else {
-            parent_num = b.height - 1;
+            parent_num = block_num - 1;
         }
 
-        let parent_hash = b.previous_block.clone();
-
         let lib: u64;
-        if b.height > self.confirms {
-            lib = b.height - self.confirms;
+        if block_num > self.confirms {
+            lib = block_num - self.confirms;
         } else {
             lib = 0;
         }
 
-        let timestamp = b.timestamp;
         let encoded: Block = b.try_into()?;
 
         if self.quiet {
@@ -179,12 +177,12 @@ impl Polling {
             println!(
                 "FIRE BLOCK {} {} {} {} {} {} {}",
                 block_num,
-                block_hash,
+                hex::encode(block_hash),
                 parent_num,
-                parent_hash,
+                hex::encode(parent_hash),
                 lib,
                 timestamp,
-                general_purpose::STANDARD.encode(&encoded.encode_to_vec())
+                hex::encode(&encoded.encode_to_vec())
             );
         }
 

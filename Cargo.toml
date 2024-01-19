@@ -33,7 +33,6 @@ structopt = "0.3.26"
 thiserror = "1.0.30"
 tokio = { version = "1", features = ["full"] }
 uint = "0.9"
-base64 = "0.21.7"
 
 [features]
 default = [ ]
