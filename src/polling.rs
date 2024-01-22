@@ -190,7 +190,7 @@ impl Polling {
                 hex::encode(parent_hash),
                 lib,
                 timestamp,
-                hex::encode(encoded.encode_to_vec())
+                base64_url::encode(&encoded.encode_to_vec())
             );
         }
 
