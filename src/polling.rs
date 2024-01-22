@@ -151,28 +151,36 @@ impl Polling {
     /// FIRE BLOCK <BLOCK_NUM> <BLOCK_HASH> <PARENT_NUM> <PARENT_HASH> <LIB> <TIMESTAMP> <ENCODED>
     fn firehose_log(&self, b: FirehoseBlock) -> Result<()> {
         let block_num = b.height;
-        let block_hash = b.indep_hash.clone();
-        let parent_hash = b.previous_block.clone();
+        let block_hash = base64_url::decode(&b.indep_hash)
+            .with_context(|| format!("invalid base64url indep_hash on block {}", block_num))?;
+        let parent_hash = base64_url::decode(&b.previous_block)
+            .with_context(|| format!("invalid base64url previous_block on block {}", block_num))?;
         let timestamp = b.timestamp;
 
-        let parent_num: u64;
-        if b.previous_block.is_empty() {
-            parent_num = 0;
+        let parent_num = if b.previous_block.is_empty() {
+            0
         } else {
-            parent_num = block_num - 1;
-        }
+            block_num - 1
+        };
 
-        let lib: u64;
-        if block_num > self.confirms {
-            lib = block_num - self.confirms;
+        let lib = if block_num > self.confirms {
+            block_num - self.confirms
         } else {
-            lib = 0;
-        }
+            0
+        };
 
         let encoded: Block = b.try_into()?;
 
         if self.quiet {
-            println!("FIRE BLOCK {} <quiet-mode>", block_num);
+            println!(
+                "FIRE BLOCK {} {} {} {} {} {}",
+                block_num,
+                hex::encode(block_hash),
+                parent_num,
+                hex::encode(parent_hash),
+                lib,
+                timestamp
+            );
         } else {
             println!(
                 "FIRE BLOCK {} {} {} {} {} {} {}",
@@ -182,7 +190,7 @@ impl Polling {
                 hex::encode(parent_hash),
                 lib,
                 timestamp,
-                hex::encode(&encoded.encode_to_vec())
+                hex::encode(encoded.encode_to_vec())
             );
         }
 
@@ -211,17 +219,18 @@ impl Polling {
 
         while let Some(item) = tasks.next().await {
             let block = item?;
+            let height = block.height;
 
-            self.firehose_log(block.clone())?;
+            self.firehose_log(block)?;
             // # Safty
             //
             // only update ptr after firehose_log has been emitted
-            self.ptr = block.height + 1;
+            self.ptr = height + 1;
 
             self.write_ptr().await?;
 
             if let Some(end) = self.end {
-                if block.height == end {
+                if height == end {
                     return Err(Error::StopBlockReached);
                 }
             }
