@@ -3,10 +3,11 @@ use crate::types::FirehoseBlock;
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{client::Client, env::Env, pb::Block, Error, Result};
 use anyhow::Context;
+use base64::{engine::general_purpose, Engine as _};
 use futures::stream;
 use futures::StreamExt;
-
 use prost::Message;
+
 use std::path::{Path, PathBuf};
 use std::{fs, time::Duration};
 
@@ -190,7 +191,7 @@ impl Polling {
                 hex::encode(parent_hash),
                 lib,
                 timestamp,
-                base64_url::encode(&encoded.encode_to_vec())
+                general_purpose::STANDARD.encode(encoded.encode_to_vec())
             );
         }
 
