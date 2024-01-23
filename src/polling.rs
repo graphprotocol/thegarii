@@ -144,7 +144,7 @@ impl Polling {
     ///
     /// FIRE INIT <VERSION> <BLOCK_TYPE_URL>
     fn firehose_init(&self) {
-        println!("FIRE INIT 1.0 sf.arweave.type.v1");
+        println!("FIRE INIT 1.0 sf.arweave.type.v1.Block");
     }
 
     /// Firehose log to stdout
