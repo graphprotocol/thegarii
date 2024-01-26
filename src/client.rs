@@ -80,7 +80,7 @@ impl Client {
                             retried += 1;
                             ms_between_retries *= 2;
                             log::info!(
-                                "retrying request in {} seconds, at attempt {}, attempts letf {}",
+                                "retrying request in {} second(s), at attempt {}, attempts letf {}",
                                 Duration::as_secs(&duration),
                                 retried,
                                 self.retry - retried
