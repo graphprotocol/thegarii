@@ -1,11 +1,11 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 
-//! the graii results
+//! the garii results
 
 use std::{convert::Infallible, env::VarError, net::AddrParseError, num::ParseIntError};
 
-/// the graii errors
+/// the garii errors
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("block {0} not found")]
@@ -30,6 +30,8 @@ pub enum Error {
     ParseBlockPtrFailed,
     #[error("stop block reached")]
     StopBlockReached,
+    #[error("retries reached")]
+    RetriesReached,
     #[error(transparent)]
     AddrParseError(#[from] AddrParseError),
     #[error(transparent)]
