@@ -9,7 +9,7 @@ use crate::{
 };
 use futures::future::join_all;
 use rand::Rng;
-use reqwest::{Client as ReqwestClient, ClientBuilder};
+use reqwest::{Client as ReqwestClient, ClientBuilder, StatusCode};
 use serde::de::DeserializeOwned;
 use std::time::Duration;
 
@@ -60,23 +60,37 @@ impl Client {
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
         let mut retried = 0;
+        let mut ms_between_retries = 10000;
         loop {
             match self
                 .client
                 .get(&format!("{}/{}", self.next_endpoint(), path))
                 .send()
-                .await?
-                .json()
                 .await
             {
-                Ok(r) => return Ok(r),
-                Err(e) => {
-                    if retried < self.retry {
-                        tokio::time::sleep(Duration::from_millis(1000)).await;
-                        retried += 1;
-                        continue;
+                Ok(r) => match r.status() {
+                    StatusCode::OK => match r.json::<T>().await {
+                        Ok(r) => return Ok(r),
+                        Err(e) => return Err(e.into()),
+                    },
+                    _ => {
+                        if retried < self.retry {
+                            let duration = Duration::from_millis(ms_between_retries);
+                            tokio::time::sleep(duration).await;
+                            retried += 1;
+                            ms_between_retries *= 2;
+                            log::info!(
+                                "retrying request in {} second(s), at attempt {}, attempts left {}",
+                                Duration::as_secs(&duration),
+                                retried,
+                                self.retry - retried
+                            );
+                            continue;
+                        }
+                        return Err(Error::RetriesReached);
                     }
-
+                },
+                Err(e) => {
                     return Err(e.into());
                 }
             }

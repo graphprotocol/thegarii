@@ -1,11 +1,13 @@
+use crate::types::FirehoseBlock;
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{client::Client, env::Env, pb::Block, Error, Result};
 use anyhow::Context;
+use base64::{engine::general_purpose, Engine as _};
 use futures::stream;
 use futures::StreamExt;
-use futures::TryFutureExt;
 use prost::Message;
+
 use std::path::{Path, PathBuf};
 use std::{fs, time::Duration};
 
@@ -138,16 +140,59 @@ impl Polling {
             .map_err(Into::into)
     }
 
+    /// Firehose init log to stdout
+    ///
+    /// FIRE INIT <VERSION> <BLOCK_TYPE_URL>
+    fn firehose_init(&self) {
+        println!("FIRE INIT 1.0 sf.arweave.type.v1.Block");
+    }
+
     /// Firehose log to stdout
     ///
-    /// FIRE BLOCK <HEIGHT> <ENCODED>
-    fn firehose_log(&self, b: &(u64, Vec<u8>)) -> Result<()> {
-        let height = b.0;
+    /// FIRE BLOCK <BLOCK_NUM> <BLOCK_HASH> <PARENT_NUM> <PARENT_HASH> <LIB> <TIMESTAMP> <ENCODED>
+    fn firehose_log(&self, b: FirehoseBlock) -> Result<()> {
+        let block_num = b.height;
+        let block_hash = base64_url::decode(&b.indep_hash)
+            .with_context(|| format!("invalid base64url indep_hash on block {}", block_num))?;
+        let parent_hash = base64_url::decode(&b.previous_block)
+            .with_context(|| format!("invalid base64url previous_block on block {}", block_num))?;
+        let timestamp = b.timestamp;
+
+        let parent_num = if b.previous_block.is_empty() {
+            0
+        } else {
+            block_num - 1
+        };
+
+        let lib = if block_num > self.confirms {
+            block_num - self.confirms
+        } else {
+            0
+        };
+
+        let encoded: Block = b.try_into()?;
 
         if self.quiet {
-            println!("FIRE BLOCK {} <quiet-mode>", height);
+            println!(
+                "FIRE BLOCK {} {} {} {} {} {}",
+                block_num,
+                hex::encode(block_hash),
+                parent_num,
+                hex::encode(parent_hash),
+                lib,
+                timestamp
+            );
         } else {
-            println!("FIRE BLOCK {} {}", height, hex::encode(&b.1));
+            println!(
+                "FIRE BLOCK {} {} {} {} {} {} {}",
+                block_num,
+                hex::encode(block_hash),
+                parent_num,
+                hex::encode(parent_hash),
+                lib,
+                timestamp,
+                general_purpose::STANDARD.encode(encoded.encode_to_vec())
+            );
         }
 
         Ok(())
@@ -166,31 +211,27 @@ impl Polling {
             blocks.last().expect("non-empty")
         );
 
-        let mut tasks = stream::iter(blocks.into_iter().map(|block| {
-            self.client
-                .get_firehose_block_by_height(block)
-                .and_then(|block| async {
-                    let height = block.height;
-                    let proto: Block = block.try_into()?;
-
-                    Ok((height, proto.encode_to_vec()))
-                })
-        }))
+        let mut tasks = stream::iter(
+            blocks
+                .into_iter()
+                .map(|block| self.client.get_firehose_block_by_height(block)),
+        )
         .buffered(self.batch);
 
         while let Some(item) = tasks.next().await {
             let block = item?;
+            let height = block.height;
 
-            self.firehose_log(&block)?;
+            self.firehose_log(block)?;
             // # Safty
             //
             // only update ptr after firehose_log has been emitted
-            self.ptr = block.0 + 1;
+            self.ptr = height + 1;
 
             self.write_ptr().await?;
 
             if let Some(end) = self.end {
-                if block.0 == end {
+                if height == end {
                     return Err(Error::StopBlockReached);
                 }
             }
@@ -236,6 +277,8 @@ impl Polling {
 
     /// start polling service
     pub async fn start(&mut self) -> Result<()> {
+        self.firehose_init();
+
         loop {
             // restart when network error occurs
             let result = self.track_head().await;
