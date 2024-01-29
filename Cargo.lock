@@ -1207,12 +1207,14 @@ dependencies = [
 name = "thegarii"
 version = "0.0.9"
 dependencies = [
+ "anyhow",
  "async-trait",
  "base64-url",
  "bincode",
  "dirs",
  "env_logger",
  "futures",
+ "hex",
  "log",
  "prost",
  "prost-types",

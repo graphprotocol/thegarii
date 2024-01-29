@@ -210,6 +210,8 @@ impl Client {
     /// }
     /// ```
     pub async fn get_firehose_block_by_height(&self, height: u64) -> Result<FirehoseBlock> {
+        log::info!("resolving firehose block {}", height);
+
         let block = self.get_block_by_height(height).await?;
         let txs: Vec<Transaction> = join_all(block.txs.iter().map(|tx| self.get_tx_by_id(tx)))
             .await

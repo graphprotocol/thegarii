@@ -28,7 +28,7 @@ pub struct EnvArguments {
     #[structopt(short = "B", long, default_value = "20")]
     pub batch_blocks: u16,
     /// time cost for producing a new block in arweave
-    #[structopt(short, long, default_value = "20000")]
+    #[structopt(short, long, default_value = "60000")]
     pub block_time: u64,
     /// safe blocks against to reorg in polling
     #[structopt(short, long, default_value = "20")]

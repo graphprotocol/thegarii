@@ -1,7 +1,6 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 use crate::{polling::Polling, Env, Result};
-use std::fs;
 use structopt::StructOpt;
 
 /// console service
@@ -13,23 +12,32 @@ pub struct Console {
     /// if restarting service on failing automatically
     #[structopt(short = "f", long)]
     forever: bool,
-    /// polling start from, if `None`, thegarii will poll from the block height
-    /// stored in $PTR_FILE or 0
+    /// If never processed block before, start from -s if defined (use 'live' to start from "head" block)
     #[structopt(short = "s", long)]
-    start: Option<u64>,
+    start: Option<String>,
+    /// data directory where to store latest block fully processed
+    #[structopt(short = "d", long, default_value = "./thegarii")]
+    data_directory: String,
+    /// reduce Firehose logs block output by just showing the length (not good for production!)
+    #[structopt(short = "q", long)]
+    quiet: bool,
 }
 
 impl Console {
     /// run as service
     pub async fn exec(&self, env: Env) -> Result<()> {
-        log::debug!("\n{:#?}", self);
-        let ptr = fs::read_to_string(&env.ptr_file)
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or_else(|| self.start.unwrap_or(0));
+        log::debug!("\n{:?}", self);
+        log::info!("start polling blocks...");
 
-        log::info!("start polling blocks from {}...", ptr);
-        let mut polling = Polling::new(self.end, env, self.forever, ptr).await?;
+        let mut polling = Polling::new(
+            self.data_directory.to_string(),
+            self.end,
+            env,
+            self.forever,
+            self.start.clone(),
+            self.quiet,
+        )
+        .await?;
 
         if let Err(e) = polling.start().await {
             log::error!("{:?}", e);
