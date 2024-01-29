@@ -60,7 +60,7 @@ impl Client {
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
         let mut retried = 0;
-        let mut ms_between_retries = 1000;
+        let mut ms_between_retries = 10000;
         loop {
             match self
                 .client
