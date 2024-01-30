@@ -171,29 +171,22 @@ impl Polling {
         };
 
         let encoded: Block = b.try_into()?;
-
-        if self.quiet {
-            println!(
-                "FIRE BLOCK {} {} {} {} {} {}",
-                block_num,
-                hex::encode(block_hash),
-                parent_num,
-                hex::encode(parent_hash),
-                lib,
-                timestamp
-            );
+        let block_payload = if self.quiet {
+            "<trimmed>".to_string()
         } else {
-            println!(
-                "FIRE BLOCK {} {} {} {} {} {} {}",
-                block_num,
-                hex::encode(block_hash),
-                parent_num,
-                hex::encode(parent_hash),
-                lib,
-                timestamp,
-                general_purpose::STANDARD.encode(encoded.encode_to_vec())
-            );
-        }
+            general_purpose::STANDARD.encode(encoded.encode_to_vec())
+        };
+
+        println!(
+            "FIRE BLOCK {} {} {} {} {} {} {}",
+            block_num,
+            hex::encode(block_hash),
+            parent_num,
+            hex::encode(parent_hash),
+            lib,
+            timestamp,
+            block_payload
+        );
 
         Ok(())
     }
