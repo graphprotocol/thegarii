@@ -69,7 +69,7 @@ impl TryFrom<FirehoseBlock> for Block {
             diff: Some(block.diff.try_into()?),
             height: block.height,
             hash: bd(&block.hash)?,
-            tx_root: block.tx_root.unwrap_or_default().try_into()?,
+            tx_root: block.tx_root.unwrap_or_default().into(),
             txs: block
                 .txs
                 .into_iter()
@@ -88,7 +88,7 @@ impl TryFrom<FirehoseBlock> for Block {
             weave_size: Some(block.weave_size.try_into()?),
             block_size: Some(block.block_size.try_into()?),
             cumulative_diff: Some(block.cumulative_diff.try_into()?),
-            hash_list_merkle: block.hash_list_merkle.unwrap_or_default().try_into()?,
+            hash_list_merkle: block.hash_list_merkle.unwrap_or_default().into(),
             poa: block.poa.and_then(|p| p.try_into().ok()),
         })
     }
