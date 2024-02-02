@@ -59,7 +59,7 @@ impl Polling {
             forever,
             latest: 0,
             ptr: 0,
-            quiet: quiet,
+            quiet,
         };
 
         poller.initialize_start_ptr(ptr).await?;
@@ -115,26 +115,26 @@ impl Polling {
 
         self.latest_irreversible_block_num()
             .await
-            .and_then(|live_block| {
+            .map(|live_block| {
                 log::info!(
-                    "start block explicitely provided, starting from live block {}",
+                    "start block explicitly provided, starting from live block {}",
                     live_block
                 );
 
-                Ok(live_block)
+                live_block
             })
     }
 
     async fn start_ptr_from_flag_value(&self, value: &String) -> Result<u64> {
         value
             .parse::<u64>()
-            .and_then(|value| {
+            .map(|value| {
                 log::info!(
-                    "start block explicitely provided, starting from block {}",
+                    "start block explicitly provided, starting from block {}",
                     value
                 );
 
-                Ok(value)
+                value
             })
             .context(format_args!("start {} is not a valid u64 string value", value).to_string())
             .map_err(Into::into)
