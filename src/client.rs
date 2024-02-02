@@ -87,7 +87,7 @@ impl Client {
                             );
                             continue;
                         }
-                        return Err(Error::RetriesReached);
+                        return Err(Error::RetriesReached.into());
                     }
                 },
                 Err(e) => {
