@@ -156,7 +156,7 @@ impl Polling {
             .with_context(|| format!("invalid base64url indep_hash on block {}", block_num))?;
         let parent_hash = base64_url::decode(&b.previous_block)
             .with_context(|| format!("invalid base64url previous_block on block {}", block_num))?;
-        let timestamp = b.timestamp;
+        let timestamp = b.timestamp * 1000000000;
 
         let parent_num = if b.previous_block.is_empty() {
             0
