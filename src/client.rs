@@ -23,8 +23,22 @@ pub struct Client {
 
 impl Client {
     /// get next endpoint
-    fn next_endpoint(&self) -> String {
-        self.endpoints[rand::thread_rng().gen_range(0..self.endpoints.len())].to_string()
+    fn next_endpoint(&self, already_used_endpoints: &Vec<String>) -> String {
+        let mut endpoints = self.endpoints.clone();
+
+        // if all endpoints are already used, return random endpoint
+        if endpoints.len() == already_used_endpoints.len() {
+            return already_used_endpoints
+                [rand::thread_rng().gen_range(0..already_used_endpoints.len())]
+            .to_string();
+        }
+
+        // round robin endpoints that are not already used
+        let mut endpoint = endpoints.remove(0);
+        while already_used_endpoints.contains(&endpoint) {
+            endpoint = endpoints.remove(0);
+        }
+        endpoint
     }
 
     /// new arweave client
@@ -60,33 +74,45 @@ impl Client {
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
         let mut retried = 0;
-        let mut ms_between_retries = 10000;
+        let mut ms_between_retries = 5000;
+        let mut already_used_endpoints: Vec<String> = Vec::new();
+
         loop {
-            match self
-                .client
-                .get(&format!("{}/{}", self.next_endpoint(), path))
-                .send()
-                .await
-            {
+            let endpoint = self.next_endpoint(&already_used_endpoints);
+            let url = format!("{}/{}", endpoint, path);
+
+            match self.client.get(&url).send().await {
                 Ok(r) => match r.status() {
                     StatusCode::OK => match r.json::<T>().await {
                         Ok(r) => return Ok(r),
                         Err(e) => return Err(e.into()),
                     },
                     _ => {
+                        // If there's still endpoints not used yet, retry now with different endpoint
+                        if self.endpoints.len() != already_used_endpoints.len() {
+                            already_used_endpoints.push(endpoint.clone());
+                            continue;
+                        }
+
+                        // If all endpoints are used, wait then retry with random endpoint
                         if retried < self.retry {
                             let duration = Duration::from_millis(ms_between_retries);
                             tokio::time::sleep(duration).await;
                             retried += 1;
                             ms_between_retries *= 2;
-                            log::info!(
-                                "retrying request in {} second(s), at attempt {}, attempts left {}",
+                            log::warn!(
+                                "{{ \"endpoint\": \"{}\", \"path\": \"{}\", \"status\": \"{}\", \"retry_in\": {}, \"attempts\": {}, \"attempts_left\": {} }}",
+                                endpoint,
+                                path,
+                                r.status(),
                                 Duration::as_secs(&duration),
                                 retried,
                                 self.retry - retried
                             );
                             continue;
                         }
+
+                        // If all endpoints used and all retries done, return error
                         return Err(Error::RetriesReached);
                     }
                 },
@@ -198,7 +224,11 @@ impl Client {
     pub async fn get_tx_data_by_id(&self, id: &str) -> Result<String> {
         Ok(self
             .client
-            .get(&format!("{}/tx/{}/data", self.next_endpoint(), id))
+            .get(&format!(
+                "{}/tx/{}/data",
+                self.next_endpoint(&self.endpoints),
+                id
+            ))
             .send()
             .await?
             .text()
