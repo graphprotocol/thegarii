@@ -74,7 +74,7 @@ impl Client {
     /// http get request with base url
     async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
         let mut retried = 0;
-        let mut ms_between_retries = 5000;
+        let mut ms_between_retries = 10000;
         let mut already_used_endpoints: Vec<String> = Vec::new();
 
         loop {
