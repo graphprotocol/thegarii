@@ -2,7 +2,7 @@
 name = "thegarii"
 authors = ['info@chainsafe.io']
 description = 'thegarii firehose service'
-version = "0.1.0"
+version = "0.1.1"
 license = "GPL-3.0"
 homepage = 'https://github.com/ChainSafe/the-garii'
 repository = 'https://github.com/ChainSafe/the-garii'
