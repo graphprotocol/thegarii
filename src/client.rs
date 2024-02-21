@@ -23,7 +23,7 @@ pub struct Client {
 
 impl Client {
     /// get next endpoint
-    fn next_endpoint(&self, already_used_endpoints: &Vec<String>) -> String {
+    fn next_endpoint(&self, already_used_endpoints: &[String]) -> String {
         let mut endpoints = self.endpoints.clone();
 
         // if all endpoints are already used, return random endpoint

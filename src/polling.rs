@@ -150,7 +150,7 @@ impl Polling {
     /// Firehose log to stdout
     ///
     /// FIRE BLOCK <BLOCK_NUM> <BLOCK_HASH> <PARENT_NUM> <PARENT_HASH> <LIB> <TIMESTAMP> <ENCODED>
-    fn firehose_log(&self, b: FirehoseBlock) -> Result<()> {
+    fn firehose_log(&self, mut b: FirehoseBlock) -> Result<()> {
         let block_num = b.height;
         let block_hash = base64_url::decode(&b.indep_hash)
             .with_context(|| format!("invalid base64url indep_hash on block {}", block_num))?;
@@ -169,6 +169,10 @@ impl Polling {
         } else {
             0
         };
+
+        if block_num < 422250 {
+            b.tx_root = None;
+        }
 
         let encoded: Block = b.try_into()?;
         let block_payload = if self.quiet {
