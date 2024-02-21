@@ -27,7 +27,7 @@ FLAGS:
 OPTIONS:
     -B, --batch-blocks <batch-blocks>    how many blocks polling at one time [default: 20]
     -b, --block-time <block-time>        time cost for producing a new block in arweave [default: 20000]
-    -c, --confirms <confirms>            safe blocks against to reorg in polling [default: 20]
+    -c, --confirms <confirms>            safe blocks against to reorg in polling [default: 50]
     -e, --endpoints <endpoints>...       client endpoints [default: https://arweave.net/]
     -p, --ptr-path <ptr-path>            block ptr file path
     -r, --retry <retry>                  retry times when failed on http requests [default: 10]
@@ -41,7 +41,7 @@ OPTIONS:
 |---------------|--------------------------|---------------------------------------------|
 | ENDPOINTS     | `"https://arweave.net"`  | for multiple endpoints, split them with ',' |
 | BATCH\_BLOCKS | `50`                     | how many blocks batch at one time           |
-| CONFIRMS      | `20`                     | irreversibility condition                   |
+| CONFIRMS      | `50`                     | irreversibility condition                   |
 | PTR\_PATH     | `$APP_DATA/thegarii/ptr` | the file stores the block ptr for polling   |
 | retry         | `10`                     | retry times when failed on http requests    |
 | timeout       | `120_000`                | timeout of http requests                    |

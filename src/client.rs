@@ -267,6 +267,38 @@ impl Client {
         Ok(firehose_block)
     }
 
+    /// get and parse firehose blocks by hash
+    ///
+    /// ```rust
+    /// let client = thegarii::Client::from_env().unwrap();
+    /// let rt = tokio::runtime::Runtime::new().unwrap();
+    ///
+    /// { // block hash 5H-hJycMS_PnPOpobXu2CNobRlgqmw4yEMQSc5LeBfS7We63l8HjS-Ek3QaxK8ug - https://arweave.net/block/hash/5H-hJycMS_PnPOpobXu2CNobRlgqmw4yEMQSc5LeBfS7We63l8HjS-Ek3QaxK8ug
+    ///   let firehose_block = rt.block_on(client.get_firehose_block_by_hash("5H-hJycMS_PnPOpobXu2CNobRlgqmw4yEMQSc5LeBfS7We63l8HjS-Ek3QaxK8ug")).unwrap();
+    ///
+    ///   let mut block_without_txs = firehose_block.clone();
+    ///   block_without_txs.txs = vec![];
+    ///
+    ///   assert_eq!(block_without_txs, rt.block_on(client.get_block_by_hash("5H-hJycMS_PnPOpobXu2CNobRlgqmw4yEMQSc5LeBfS7We63l8HjS-Ek3QaxK8ug")).unwrap().into());
+    ///   for (idx, tx) in firehose_block.txs.iter().map(|tx| tx.id.clone()).enumerate() {
+    ///     assert_eq!(firehose_block.txs[idx], rt.block_on(client.get_tx_by_id(&tx)).unwrap());
+    ///   }
+    /// }
+    /// ```
+    pub async fn get_firehose_block_by_hash(&self, hash: &str) -> Result<FirehoseBlock> {
+        log::info!("resolving firehose block {}", hash);
+
+        let block = self.get_block_by_hash(hash).await?;
+        let txs: Vec<Transaction> = join_all(block.txs.iter().map(|tx| self.get_tx_by_id(tx)))
+            .await
+            .into_iter()
+            .collect::<Result<Vec<Transaction>>>()?;
+
+        let mut firehose_block: FirehoseBlock = block.into();
+        firehose_block.txs = txs;
+        Ok(firehose_block)
+    }
+
     /// poll blocks from iterator
     ///
     /// ```rust

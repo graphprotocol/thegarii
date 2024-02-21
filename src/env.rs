@@ -15,7 +15,7 @@ const DEFAULT_BATCH_BLOCKS: u16 = 50;
 const RETRY: &str = "RETRY";
 const DEFAULT_RETRY: u8 = 10;
 const CONFIRMS: &str = "CONFIRMS";
-const DEFAULT_CONFIRMS: u64 = 20;
+const DEFAULT_CONFIRMS: u64 = 50;
 const TIMEOUT: &str = "TIMEOUT";
 const DEFAULT_TIMEOUT: u64 = 120_000;
 const PTR_FILE: &str = "PTR_FILE";
@@ -31,7 +31,7 @@ pub struct EnvArguments {
     #[structopt(short, long, default_value = "60000")]
     pub block_time: u64,
     /// safe blocks against to reorg in polling
-    #[structopt(short, long, default_value = "20")]
+    #[structopt(short, long, default_value = "50")]
     pub confirms: u64,
     /// client endpoints
     #[structopt(short, long, default_value = "https://arweave.net/")]
