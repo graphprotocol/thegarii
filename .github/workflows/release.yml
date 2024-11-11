@@ -72,7 +72,7 @@ jobs:
           args: --release
 
       - name: Upload Build
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: linux-x86_64-unknown-linux-gnu
           path: ./target/release/thegarii
@@ -95,7 +95,7 @@ jobs:
 
       - name: Download All Artifacts
         id: download-artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           path: ./binaries
 
@@ -110,7 +110,7 @@ jobs:
           #  └── linux-x86_64-unknown-linux-gnu
           #      └── <binary>
           #
-          # The sub-folder name comes from the 'name' field of the 'actions/upload-artifact@v2'
+          # The sub-folder name comes from the 'name' field of the 'actions/upload-artifact@v4'
           # step. The '<binary>' file name is the filename of the uploaded 'path' field,
           # we used './target/release/<binary>' in the upload step so the file name here
           # is '<binary>'.
