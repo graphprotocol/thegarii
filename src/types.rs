@@ -179,10 +179,7 @@ mod uints {
     impl U256 {
         /// to big endian
         pub fn to_be(&self) -> Vec<u8> {
-            let mut bytes = vec![0; 32];
-            self.to_big_endian(&mut bytes);
-
-            bytes
+            self.to_big_endian().to_vec()
         }
     }
 }

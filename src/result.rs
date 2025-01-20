@@ -49,7 +49,7 @@ pub enum Error {
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
     #[error(transparent)]
-    Timestamp(#[from] prost_types::TimestampOutOfSystemRangeError),
+    Timestamp(#[from] prost_types::TimestampError),
     #[error(transparent)]
     Uint(#[from] uint::FromDecStrErr),
     #[error(transparent)]
